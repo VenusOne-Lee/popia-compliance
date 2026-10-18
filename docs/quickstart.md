@@ -93,7 +93,7 @@ uvx popia-kit site-check https://your-site.co.za --out site-check.md
 
 ## 3. Lovable
 
-Verified on 18 October 2026 in a fresh Lovable project with Lovable Cloud.
+Tested on 18 October 2026 in a fresh Lovable project with Lovable Cloud: the database rules on the live database, the privacy endpoints and the component tests.
 
 **1. Add the knowledge.** Paste [`adapters/lovable/knowledge.md`](../adapters/lovable/knowledge.md) into Project settings, Knowledge. Lovable then applies the rules on every change.
 
