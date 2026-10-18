@@ -88,7 +88,7 @@ export function buildMarketingWording(opts: {
   business: MarketingBusinessIdentity;
   marketedGoods: string;
   channels: MarketingChannel[];
-  withdrawalText?: string;
+  withdrawalText?: string | undefined;
 }): { intro: string; perChannel: Record<MarketingChannel, string>; withdrawal: string; full: string } {
   const who = opts.business.registrationNumber
     ? `${opts.business.legalName} (registration number ${opts.business.registrationNumber})`

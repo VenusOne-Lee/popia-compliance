@@ -31,7 +31,7 @@ Every item cites the POPIA section it supports. The components handle the engine
 | `sa-id` | lib | `isValidSaId`, `parseSaId`, `maskSaId`. Port of `scripts/sa_id.py`. | s19, s57 |
 | `redact` | lib | `redact()` and `createSafeLogger()`. Scrubs emails, SA ID numbers, SA phone numbers (+27 and 06x, 07x, 08x), card and account numbers, JWTs and API tokens from strings and objects. | s19, s14 |
 | `privacy-centre` | component | Settings panel for signed-in users: download my data, delete my account (with confirmation and a note on legally retained data), marketing preferences, withdraw consent, object (Form 1), complain to the Information Regulator. Calls configurable endpoints. | s23, s24, s11(3), s69, s74 |
-| `supabase-privacy-schema` | file | Three migrations. Schema `privacy` with `data_inventory`, append-only `consent_events`, `consent_current` view, `dsar_requests` (due 30 days after receipt), `retention_runs`, append-only `access_audit`. RLS enabled and forced on all tables. `enforce_retention()` with a guarded pg_cron schedule. `security_report()` for tables without RLS, permissive policies and public buckets. | s11, s14, s17, s19, s23, s24 |
+| `supabase-privacy-schema` | file | Four migrations. Schema `privacy` with `data_inventory`, append-only `consent_events`, `consent_current` view, `dsar_requests` (due 30 days after receipt), `retention_runs`, append-only `access_audit`. RLS enabled and forced on all tables. `enforce_retention()` with a guarded pg_cron schedule. `security_report()` for tables without RLS, permissive policies, exposed security definer functions and public buckets. | s11, s14, s17, s19, s23, s24 |
 | `supabase-privacy-functions` | file | Deno edge functions: `dsar-export`, `dsar-delete`, `consent`, `unsubscribe`, plus `_shared/privacy-config.ts`. Identity from the JWT only. CORS allow-list. HMAC-signed unsubscribe tokens with one-click `List-Unsubscribe-Post`. IP hashed with a salt. | s11(2), s19, s23, s24, s69(4) |
 
 Files install to `components/popia/*`, `lib/popia/*` and `supabase/*`.
@@ -198,13 +198,19 @@ https://raw.githubusercontent.com/VenusOne-Lee/popia-compliance/main/registry/r/
    Load every analytics or marketing script only through <ConsentGate>. Remove any tracking
    script that loads before consent. Accept all and Reject all must stay equally prominent.
 
-3. Apply the migrations from supabase-privacy-schema.json (schema "privacy", in order 0001, 0002, 0003).
+3. Apply the migrations from supabase-privacy-schema.json (schema "privacy", in order 0001, 0002, 0003, 0004).
+   Then run select * from privacy.security_report(); and show me any critical or high rows.
    Do not weaken any RLS policy or grant. Do not add update or delete policies to consent_events.
 
-4. Create the edge functions from supabase-privacy-functions.json: dsar-export, dsar-delete,
-   consent, unsubscribe and _shared/privacy-config.ts. Edit PRIVACY_TABLES in privacy-config.ts
-   to list this app's real tables that hold personal information, with the user id column and
-   whether to delete, de-identify or retain each one. The unsubscribe function must not require a JWT.
+4. Create the endpoints from supabase-privacy-functions.json: dsar-export, dsar-delete,
+   consent, unsubscribe and _shared/privacy-config.ts.
+   If this project can't create Supabase Edge Functions (Lovable's TanStack Start stack can't),
+   port them to server routes under /api/privacy/ instead: identity only from the verified access
+   token, the service role client imported only inside server handlers, and every check in
+   privacy-config.ts kept. Point PrivacyCentre's endpoints prop and the consent calls at them.
+   Edit PRIVACY_TABLES to list this app's real tables that hold personal information, with the
+   user id column and whether to delete, de-identify or retain each one. The unsubscribe endpoint
+   must not require a login. If a secret is missing, the endpoints must refuse to run.
    Ask me for these secrets: ALLOWED_ORIGINS, CONSENT_IP_SALT, UNSUBSCRIBE_SECRET.
 
 5. Add a /settings/privacy page for signed-in users that renders <PrivacyCentre> with the Supabase URL,

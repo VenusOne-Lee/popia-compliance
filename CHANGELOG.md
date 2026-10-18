@@ -18,6 +18,8 @@ Legal content merged without a legal reviewer is marked `pending legal review` (
 - `evals/run_evals.py` refuses provider URLs that are not http or https.
 
 ### Fixed
+- Supabase: new migration `0004_function_guards.sql`. `privacy.redact_consent_events` now refuses API callers that are not `service_role`, even if a grant is left open, and `privacy.security_report()` flags security definer functions that `anon` or `authenticated` can execute. Found in an end-to-end test on Lovable Cloud, where the migration tool skipped a revoke and left the function executable by any signed-in user.
+- Components compile under strict TypeScript settings (`noPropertyAccessFromIndexSignature`, `exactOptionalPropertyTypes`, `noUncheckedIndexedAccess`), which Lovable's current template turns on.
 - `popia_badge`: badges built from a `site_check` JSON result now show the check date (`checked_at`), not just scanner results (`scanned_at`).
 
 ## [1.0.1] - 2026-10-18

@@ -111,11 +111,11 @@ function isConsentState(v: unknown): v is ConsentState {
   if (!v || typeof v !== "object") return false;
   const o = v as Record<string, unknown>;
   return (
-    o.necessary === true &&
-    typeof o.analytics === "boolean" &&
-    typeof o.marketing === "boolean" &&
-    typeof o.policyVersion === "string" &&
-    typeof o.decidedAt === "string"
+    o["necessary"] === true &&
+    typeof o["analytics"] === "boolean" &&
+    typeof o["marketing"] === "boolean" &&
+    typeof o["policyVersion"] === "string" &&
+    typeof o["decidedAt"] === "string"
   );
 }
 
