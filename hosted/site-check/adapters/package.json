@@ -1,0 +1,15 @@
+{
+  "name": "popia-sitecheck-node-adapters",
+  "private": true,
+  "type": "module",
+  "description": "Node side of site-check: core.ts on Node 20.3+ with these adapters. Kept here, not at the repo root, so Deno never switches the Edge Function to node_modules resolution.",
+  "engines": { "node": ">=20.3" },
+  "scripts": {
+    "test": "node --test test/node.smoke.ts"
+  },
+  "devDependencies": {
+    "@supabase/supabase-js": "2.118.0",
+    "@types/node": "20.19.43",
+    "undici": "6.29.1"
+  }
+}

@@ -19,6 +19,7 @@ Law current to **18 October 2026**. See [regulatory watch](references/10-regulat
 | **Adapters** | Same rules for Cursor, Codex, Copilot, Windsurf, Gemini, Lovable, ChatGPT | [`adapters/`](adapters) | Available |
 | **Scanner** | Finds open tables, leaked keys, trackers before consent, pre-ticked boxes, PI in logs and more. Markdown, JSON, SARIF | [`scripts/popia_scan.py`](scripts/popia_scan.py) | Available |
 | **Site check** | Passive check of a live site: headers, cookies before consent, trackers, notices | [`scripts/site_check.py`](scripts/site_check.py) | Available |
+| **Hosted site check** | The same check as a public endpoint you can host, hardened for untrusted URLs: SSRF guard on every hop, rate limits, optional Turnstile | [`hosted/site-check/`](hosted/site-check) | Available |
 | **Components** | Consent banner, Form 4 opt-in, privacy centre, Supabase migrations and edge functions | [`registry/`](registry) | Available |
 | **Compliance pack** | Answer questions, get a draft privacy notice, cookie notice, ROPA, PAIA manual and more | [`scripts/popia_pack.py`](scripts/popia_pack.py), [`templates/`](templates) | Available |
 | **Sector packs** | Fintech, health, education and children, short-term rentals, e-commerce, HR | [`packs/`](packs) | Available |

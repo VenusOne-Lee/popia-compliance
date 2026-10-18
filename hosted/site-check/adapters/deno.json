@@ -1,0 +1,4 @@
+{
+  "//": "Only for type checking the Node adapters with Deno (deno task check:adapters at the repo root).",
+  "nodeModulesDir": "manual"
+}
