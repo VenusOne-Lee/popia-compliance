@@ -1,0 +1,113 @@
+name: "POPIA Scan"
+description: "Static POPIA and security scan for South African builders. Findings are leads for review, not legal conclusions."
+author: "Venus One (Pty) Ltd"
+branding:
+  icon: "shield"
+  color: "green"
+
+inputs:
+  path:
+    description: "Path to scan, relative to the workspace."
+    required: false
+    default: "."
+  fail-on:
+    description: "Fail the step when a finding at or above this severity exists: critical, high, medium, low, info or none."
+    required: false
+    default: "high"
+  min-severity:
+    description: "Lowest severity to report."
+    required: false
+    default: "info"
+  sarif:
+    description: "Write a SARIF file (popia-scan.sarif)."
+    required: false
+    default: "true"
+  upload-sarif:
+    description: "Upload SARIF to GitHub code scanning. Needs permissions security-events: write."
+    required: false
+    default: "true"
+  python-version:
+    description: "Python version for the scanner (3.8 or later)."
+    required: false
+    default: "3.12"
+
+outputs:
+  critical:
+    description: "Number of critical findings."
+    value: ${{ steps.scan.outputs.critical }}
+  high:
+    description: "Number of high findings."
+    value: ${{ steps.scan.outputs.high }}
+  sarif-file:
+    description: "Path to the SARIF file, if written."
+    value: ${{ steps.scan.outputs.sarif_file }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Run POPIA scan
+      id: scan
+      shell: bash
+      env:
+        POPIA_PATH: ${{ inputs.path }}
+        POPIA_MIN_SEV: ${{ inputs.min-severity }}
+        POPIA_SARIF: ${{ inputs.sarif }}
+        POPIA_SCANNER: ${{ github.action_path }}/scripts/popia_scan.py
+      run: |
+        set -euo pipefail
+        out="${RUNNER_TEMP:-/tmp}/popia"
+        mkdir -p "$out"
+        python3 "$POPIA_SCANNER" "$POPIA_PATH" --min-severity "$POPIA_MIN_SEV" --format json --out "$out/popia-scan.json"
+        python3 "$POPIA_SCANNER" "$POPIA_PATH" --min-severity "$POPIA_MIN_SEV" --format md --out "$out/popia-scan.md"
+        if [ "$POPIA_SARIF" = "true" ]; then
+          python3 "$POPIA_SCANNER" "$POPIA_PATH" --min-severity "$POPIA_MIN_SEV" --format sarif --out popia-scan.sarif
+          echo "sarif_file=popia-scan.sarif" >> "$GITHUB_OUTPUT"
+        else
+          echo "sarif_file=" >> "$GITHUB_OUTPUT"
+        fi
+        cat "$out/popia-scan.md" >> "$GITHUB_STEP_SUMMARY"
+        python3 - "$out/popia-scan.json" >> "$GITHUB_OUTPUT" <<'PY'
+        import json, sys
+        s = json.load(open(sys.argv[1]))["summary"]
+        for k in ("critical", "high", "medium", "low", "info"):
+            print(f"{k}={s.get(k, 0)}")
+        PY
+        echo "json_file=$out/popia-scan.json" >> "$GITHUB_OUTPUT"
+
+    - name: Upload SARIF to code scanning
+      if: ${{ inputs.sarif == 'true' && inputs.upload-sarif == 'true' }}
+      continue-on-error: true
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: popia-scan.sarif
+        category: popia-scan
+
+    - name: Apply fail-on threshold
+      shell: bash
+      env:
+        POPIA_FAIL_ON: ${{ inputs.fail-on }}
+        POPIA_JSON: ${{ steps.scan.outputs.json_file }}
+      run: |
+        set -euo pipefail
+        python3 - <<'PY'
+        import json, os, sys
+        order = ["critical", "high", "medium", "low", "info"]
+        level = os.environ["POPIA_FAIL_ON"].strip().lower()
+        if level == "none":
+            sys.exit(0)
+        if level not in order:
+            print(f"::error::fail-on must be one of {order} or none, got {level}")
+            sys.exit(2)
+        s = json.load(open(os.environ["POPIA_JSON"]))["summary"]
+        hits = {k: s.get(k, 0) for k in order[: order.index(level) + 1] if s.get(k, 0)}
+        if hits:
+            detail = ", ".join(f"{v} {k}" for k, v in hits.items())
+            print(f"::error::POPIA scan found {detail} (fail-on: {level}). Triage each finding: see the job summary.")
+            sys.exit(1)
+        print(f"POPIA scan: no findings at or above {level}.")
+        PY

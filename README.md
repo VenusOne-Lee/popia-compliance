@@ -23,8 +23,8 @@ Law current to **18 October 2026**. See [regulatory watch](references/10-regulat
 | **Compliance pack** | Answer questions, get a draft privacy notice, cookie notice, ROPA, PAIA manual and more | [`scripts/popia_pack.py`](scripts/popia_pack.py), [`templates/`](templates) | Available |
 | **Sector packs** | Fintech, health, education and children, short-term rentals, e-commerce, HR | [`packs/`](packs) | Available |
 | **Translations** | Draft notices in Afrikaans, isiZulu, isiXhosa and Setswana (review wanted) | [`i18n/`](i18n) | Draft, needs native review |
-| **MCP server** | Lets any MCP-capable agent run the scanner and look up guidance | [`mcp/`](mcp), [`docs/mcp.md`](docs/mcp.md) | Landing soon |
-| **CI** | GitHub Action, pre-commit hook, scan badge | [`action.yml`](action.yml), [`docs/automation.md`](docs/automation.md) | Landing soon |
+| **MCP server** | Lets any MCP-capable agent run the scanner and look up guidance | [`mcp/`](mcp), [`docs/mcp.md`](docs/mcp.md) | Available |
+| **CI** | GitHub Action, pre-commit hook, scan badge | [`action.yml`](action.yml), [`docs/automation.md`](docs/automation.md) | Available |
 | **Evals** | Test cases that check AI tools follow the skill | [`evals/`](evals) | Available |
 
 ## Install
@@ -60,7 +60,7 @@ python3 scripts/site_check.py https://example.co.za --out site-check.md
 
 ```
 
-### In CI (landing soon)
+### In CI
 
 ```yaml
 # .github/workflows/popia.yml

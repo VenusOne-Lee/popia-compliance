@@ -1,0 +1,10 @@
+# language: script runs the entry relative to this hook repository, so consumers do not need
+# a copy of the scanner. Needs python3 on PATH (stdlib only, 3.8 or later).
+- id: popia-scan
+  name: POPIA scan
+  description: Static POPIA and security scan. Blocks the commit on high or critical findings. Engineering guidance, not legal advice.
+  language: script
+  entry: scripts/popia_scan.py --fail-on high --min-severity high
+  pass_filenames: false
+  always_run: true
+  require_serial: true

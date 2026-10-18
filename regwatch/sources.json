@@ -1,0 +1,28 @@
+{
+  "user_agent": "popia-compliance-regwatch/1.0 (+https://github.com/VenusOne-Lee/popia-compliance; monthly check)",
+  "timeout_seconds": 20,
+  "delay_between_requests_seconds": 3,
+  "sources": [
+    {
+      "id": "media-statements",
+      "name": "Information Regulator media statements",
+      "url": "https://inforegulator.org.za/media-statements/",
+      "enabled": true
+    },
+    {
+      "id": "enforcement-notices",
+      "name": "Information Regulator enforcement notices",
+      "url": "https://inforegulator.org.za/enforcement-notices/",
+      "enabled": true
+    },
+    {
+      "id": "guidance-notes",
+      "name": "Information Regulator guidance notes",
+      "url": "https://inforegulator.org.za/guidance-notes/",
+      "enabled": true
+    }
+  ],
+  "include_link_patterns": ["\\.pdf($|\\?)", "/wp-content/uploads/", "/\\d{4}/\\d{2}/", "media-statement", "enforcement", "guidance", "notice"],
+  "exclude_link_patterns": ["#", "^mailto:", "^tel:", "facebook\\.com", "twitter\\.com", "x\\.com", "linkedin\\.com", "youtube\\.com", "instagram\\.com", "/wp-login", "/feed/?$", "/tag/", "/category/", "/page/\\d+/?$"],
+  "min_title_length": 12
+}
