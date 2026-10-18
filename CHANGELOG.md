@@ -7,6 +7,7 @@ Legal content merged without a legal reviewer is marked `pending legal review` (
 ## [Unreleased]
 
 ### Added
+- One-line install, no clone needed: `uvx --from git+https://github.com/VenusOne-Lee/popia-compliance popia-kit scan .`, the `pipx run` equivalent, or `npx -y github:VenusOne-Lee/popia-compliance scan .`. One `popia-kit` command with `scan`, `site-check`, `pack`, `badge`, `id` and `mcp`. Packaging files: `pyproject.toml` (package `popia-kit`) and `package.json`. CI installs the package into a clean environment and runs every command.
 - Security workflow: Bandit, Semgrep, Gitleaks (full history) and CodeQL on every push and pull request, and weekly. Dependabot for GitHub Actions.
 
 ### Changed

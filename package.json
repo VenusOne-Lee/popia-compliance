@@ -1,0 +1,26 @@
+{
+  "name": "popia-kit",
+  "version": "1.1.0",
+  "description": "POPIA Kit: scanner, site check, compliance pack generator and MCP server for South African builders. Needs Python 3.8+. Engineering guidance, not legal advice.",
+  "license": "MIT",
+  "author": "Venus ARC (Pty) Ltd, trading as Venus One",
+  "homepage": "https://github.com/VenusOne-Lee/popia-compliance",
+  "repository": {"type": "git", "url": "git+https://github.com/VenusOne-Lee/popia-compliance.git"},
+  "bin": {"popia-kit": "bin/popia-kit.js"},
+  "files": [
+    "bin/",
+    "scripts/*.py",
+    "scripts/rules/*.py",
+    "mcp/*.py",
+    "mcp/tools.json",
+    "references/",
+    "packs/",
+    "templates/",
+    "SKILL.md",
+    "DISCLAIMER.md",
+    "LICENSE",
+    "LICENSE-CONTENT"
+  ],
+  "engines": {"node": ">=18"},
+  "keywords": ["popia", "privacy", "south-africa", "security", "compliance", "scanner", "mcp"]
+}

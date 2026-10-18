@@ -2,7 +2,10 @@
 
 `mcp/server.py` exposes this skill as a Model Context Protocol server over stdio. Any MCP client can use it: Claude Desktop, Claude Code, Cursor, Windsurf, VS Code and others.
 
-It is pure Python 3.8 or later, standard library only. Nothing to install. It reads the repository it sits in, so clone the repo and point your client at `mcp/server.py`.
+It is pure Python 3.8 or later, standard library only. Two ways to run it:
+
+- **No clone:** `uvx --from git+https://github.com/VenusOne-Lee/popia-compliance popia-kit mcp` (or `pipx run --spec git+https://github.com/VenusOne-Lee/popia-compliance popia-kit mcp`). Use that as the command in your client config.
+- **From a clone:** point your client at `mcp/server.py`. It reads the repository it sits in.
 
 This is engineering guidance, not legal advice. Every tool result ends with that line. See [DISCLAIMER.md](../DISCLAIMER.md).
 

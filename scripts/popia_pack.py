@@ -41,7 +41,10 @@ from typing import Any, Dict, List, Optional, Tuple
 __version__ = "1.0.0"
 
 ROOT = Path(__file__).resolve().parent.parent
+# Clone layout: <repo>/templates. Installed package: popia_kit/data/templates.
 TEMPLATES_DIR = ROOT / "templates"
+if not TEMPLATES_DIR.is_dir():
+    TEMPLATES_DIR = Path(__file__).resolve().parent / "data" / "templates"
 QUESTIONNAIRE = TEMPLATES_DIR / "pack-questionnaire.json"
 
 DISCLAIMER_LINE = (
@@ -969,7 +972,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             json.dump(example_answers(), fh, indent=2, ensure_ascii=False)
             fh.write("\n")
         print("Wrote example answers to %s" % args.example)
-        print("Next: python3 %s --answers %s --out %s" % (Path(__file__).name, args.example, args.out))
+        print("Next: run the pack command again with --answers %s --out %s" % (args.example, args.out))
         return 0
     if args.interactive:
         answers = ask_interactive(questions)

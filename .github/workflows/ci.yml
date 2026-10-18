@@ -60,3 +60,41 @@ jobs:
       - name: Style lint
         if: ${{ hashFiles('scripts/style_lint.py') != '' }}
         run: python3 scripts/style_lint.py
+
+  package:
+    name: One-line install (pip, pipx and npx)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "20"
+
+      - name: Install the package into a clean venv
+        run: |
+          python -m venv /tmp/pk
+          /tmp/pk/bin/pip install .
+
+      - name: Installed commands work outside the repo
+        working-directory: /tmp
+        run: |
+          /tmp/pk/bin/popia-kit version
+          /tmp/pk/bin/popia-kit scan "$GITHUB_WORKSPACE/tests/fixtures/demo-app" --format json --out /tmp/scan.json || true
+          python -c "import json; r=json.load(open('/tmp/scan.json')); assert r['files_scanned'] > 0 and len(r['findings']) > 0, r['summary']"
+          /tmp/pk/bin/popia-kit pack --example /tmp/ex.json
+          /tmp/pk/bin/popia-kit pack --answers /tmp/ex.json --out /tmp/pack
+          test -f /tmp/pack/privacy-notice.md
+          /tmp/pk/bin/popia-kit badge /tmp/scan.json --out /tmp/badge.svg
+          printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"ci","version":"1"}}}' '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' | /tmp/pk/bin/popia-kit mcp > /tmp/mcp.out
+          python -c "import json; r=[json.loads(l) for l in open('/tmp/mcp.out')]; assert len(r[1]['result']['tools']) == 8, r"
+
+      - name: npx wrapper runs from a packed tarball
+        run: |
+          npm pack --pack-destination /tmp
+          cd /tmp && npx -y ./popia-kit-*.tgz version && npx -y ./popia-kit-*.tgz scan "$GITHUB_WORKSPACE/tests/fixtures/demo-app" > /tmp/npx-scan.txt || true
+          grep -q "summary:" /tmp/npx-scan.txt

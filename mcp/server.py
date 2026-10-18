@@ -28,8 +28,14 @@ DEFAULT_PROTOCOL = "2025-06-18"
 SUPPORTED_PROTOCOLS = ["2025-06-18", "2025-03-26", "2024-11-05"]
 
 HERE = Path(__file__).resolve().parent
-REPO = HERE.parent
-SCRIPTS = REPO / "scripts"
+if (HERE.parent / "scripts").is_dir():
+    # Running from a clone of the repo.
+    REPO = HERE.parent
+    SCRIPTS = REPO / "scripts"
+else:
+    # Installed package: popia_kit/mcp/server.py, data under popia_kit/data.
+    REPO = HERE.parent / "data"
+    SCRIPTS = HERE.parent
 TOOLS_FILE = HERE / "tools.json"
 
 DISCLAIMER = ("Engineering guidance only, not legal advice. Automated output is a lead for review. "
