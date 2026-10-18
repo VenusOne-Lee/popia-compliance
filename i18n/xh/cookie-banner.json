@@ -1,0 +1,21 @@
+{
+  "_warning": "DRAFT translation. Machine-assisted, not yet reviewed by a native speaker or legal reviewer. Do not use in production until status is 'reviewed' in i18n/README.md.",
+  "_warning_local": "UYILO lwenguqulelo. Yenziwe ngoncedo lomatshini, ayikahlolwa sisithethi solwimi lweenkobe okanye ngumhloli wezomthetho. Musa ukuyisebenzisa de imo ibe 'reviewed' ku-i18n/README.md.",
+  "lang": "xh",
+  "status": "draft",
+  "source": "i18n/en/cookie-banner.json",
+  "title": "Iikhuki kule sayithi",
+  "body": "Sisebenzisa iikhuki eziyimfuneko ukuze le sayithi isebenze. Ngemvume yakho, sikwasebenzisa iikhuki zohlalutyo nezentengiso. Ungatshintsha ukhetho lwakho nangaliphi na ixesha.",
+  "accept_all": "Yamkela zonke",
+  "reject_all": "Yala zonke",
+  "choose": "Khetha iikhuki",
+  "save": "Gcina ukhetho",
+  "necessary": "Eziyimfuneko",
+  "analytics": "Uhlalutyo",
+  "marketing": "Intengiso",
+  "descriptions": {
+    "necessary": "Ziyafuneka ukuze isayithi isebenze, umzekelo ukuze uhlale ungenile. Zihlala zivuliwe.",
+    "analytics": "Zisinceda siqonde indlela abantu abayisebenzisa ngayo isayithi ukuze siyiphucule.",
+    "marketing": "Zisinceda silinganise iintengiso zethu kwaye sikubonise iintengiso ezifanelekileyo kwezinye iisayithi."
+  }
+}

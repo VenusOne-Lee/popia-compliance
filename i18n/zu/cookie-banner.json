@@ -1,0 +1,21 @@
+{
+  "_warning": "DRAFT translation. Machine-assisted, not yet reviewed by a native speaker or legal reviewer. Do not use in production until status is 'reviewed' in i18n/README.md.",
+  "_warning_local": "UHLAKA lokuhumusha. Kwenziwe ngosizo lomshini, akukabuyekezwa yisikhulumi solimi lwebele noma umbuyekezi wezomthetho. Ungakusebenzisi kuze kube isimo sithi 'reviewed' ku-i18n/README.md.",
+  "lang": "zu",
+  "status": "draft",
+  "source": "i18n/en/cookie-banner.json",
+  "title": "Amakhukhi kule sayithi",
+  "body": "Sisebenzisa amakhukhi adingekayo ukuze le sayithi isebenze. Ngemvume yakho, sisebenzisa namakhukhi okuhlaziya nawokukhangisa. Ungashintsha ukukhetha kwakho noma nini.",
+  "accept_all": "Vumela konke",
+  "reject_all": "Yenqaba konke",
+  "choose": "Khetha amakhukhi",
+  "save": "Londoloza ukukhetha",
+  "necessary": "Adingekayo",
+  "analytics": "Okuhlaziya",
+  "marketing": "Ukukhangisa",
+  "descriptions": {
+    "necessary": "Ayadingeka ukuze isayithi isebenze, isibonelo ukuze uhlale ungenile. Ahlala evuliwe.",
+    "analytics": "Asisiza ukuqonda ukuthi abantu bayisebenzisa kanjani isayithi ukuze siyithuthukise.",
+    "marketing": "Asisiza ukukala izikhangiso zethu nokukukhombisa izikhangiso ezifanele kwamanye amasayithi."
+  }
+}

@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Python ${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3.8 is not available on ubuntu-24.04 images, so pin 22.04 for it.
+        include:
+          - python: "3.8"
+            os: ubuntu-22.04
+          - python: "3.12"
+            os: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Unit tests
+        run: python -m unittest discover -s tests -p "test_*.py" -t . -v
+
+      - name: Scanner rules load
+        run: python3 scripts/popia_scan.py --list-rules
+
+      - name: Scanner self-test on fixtures
+        if: ${{ hashFiles('tests/fixtures/**') != '' }}
+        run: |
+          python3 scripts/popia_scan.py tests/fixtures --format json --out scan-fixtures.json
+          python3 -c "import json; r=json.load(open('scan-fixtures.json')); assert r['files_scanned'] > 0, r; print(r['summary'])"
+
+      - name: Evals (dry run)
+        if: ${{ hashFiles('evals/run_evals.py') != '' }}
+        run: python3 evals/run_evals.py --dry-run
+
+      - name: Registry build check
+        if: ${{ hashFiles('registry/build.py') != '' }}
+        run: python3 registry/build.py --check
+
+      - name: MCP smoke test
+        run: python3 mcp/smoke_test.py
+
+      - name: Badge from fixture scan
+        if: ${{ hashFiles('tests/fixtures/**') != '' }}
+        run: python3 scripts/popia_badge.py scan-fixtures.json --out badge.svg
+
+      - name: Regwatch parser on fixture (offline)
+        run: python3 scripts/regwatch.py --dry-run --offline-fixture tests/automation/fixtures/regulator-list.html
+
+      - name: Style lint
+        if: ${{ hashFiles('scripts/style_lint.py') != '' }}
+        run: python3 scripts/style_lint.py

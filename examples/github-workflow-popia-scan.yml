@@ -1,0 +1,32 @@
+# Copy to .github/workflows/popia-scan.yml in your repository.
+# Runs the POPIA scanner on every push and pull request, posts a summary to the job,
+# uploads SARIF to the Security tab, and fails the check on high or critical findings.
+# Findings are leads for review, not legal conclusions. Engineering guidance only.
+name: POPIA scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+  security-events: write   # needed to upload SARIF to code scanning
+
+jobs:
+  popia:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: POPIA scan
+        id: popia
+        uses: VenusOne-Lee/popia-compliance@v1
+        with:
+          path: .
+          fail-on: high
+          min-severity: low
+
+      - name: Show counts
+        if: always()
+        run: echo "critical=${{ steps.popia.outputs.critical }} high=${{ steps.popia.outputs.high }}"

@@ -1,0 +1,18 @@
+{
+  "lang": "en",
+  "status": "source",
+  "title": "Cookies on this site",
+  "body": "We use necessary cookies to make this site work. With your permission, we also use analytics and marketing cookies. You can change your choice at any time.",
+  "accept_all": "Accept all",
+  "reject_all": "Reject all",
+  "choose": "Choose cookies",
+  "save": "Save choices",
+  "necessary": "Necessary",
+  "analytics": "Analytics",
+  "marketing": "Marketing",
+  "descriptions": {
+    "necessary": "Needed for the site to work, for example to keep you signed in. Always on.",
+    "analytics": "Help us understand how people use the site so we can improve it.",
+    "marketing": "Help us measure our adverts and show you relevant adverts on other sites."
+  }
+}

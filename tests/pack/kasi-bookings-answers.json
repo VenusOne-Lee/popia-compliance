@@ -1,0 +1,74 @@
+{
+  "_note": "Fictional company for tests. All names, numbers and addresses are made up.",
+  "company_legal_name": "Kasi Bookings (Pty) Ltd",
+  "company_reg_number": "2024/000000/07 (fictional)",
+  "trading_name": "Kasi Bookings",
+  "physical_address": "10 Test Street, Soweto, Johannesburg, 0000 (fictional)",
+  "website": "https://kasibookings.example",
+  "head_of_body": "Naledi Test (CEO)",
+  "io_name": "Naledi Test",
+  "io_email": "privacy@kasibookings.example",
+  "io_phone": "+27 00 000 0001 (fictional)",
+  "dios": [],
+  "products_services": "an online booking and payments platform for hair salons, barbers and car washes",
+  "data_subject_types": ["Customers", "Business customers and their contact people", "Website visitors"],
+  "data_categories": [
+    "Identity details (name, title)",
+    "Contact details (email, phone, address)",
+    "Account and login details",
+    "Payment and transaction records",
+    "Location information",
+    "Device and online identifiers (IP address, cookie IDs)"
+  ],
+  "special_pi": [],
+  "children": false,
+  "purposes": [
+    {"purpose": "Create accounts and manage bookings", "data": "Name, phone, email, booking history", "lawful_basis": "contract"},
+    {"purpose": "Process payments and keep tax records", "data": "Payment and transaction records", "lawful_basis": "legal_obligation"},
+    {"purpose": "Send booking reminders by SMS", "data": "Name, phone, booking time", "lawful_basis": "contract"},
+    {"purpose": "Send offers by email and WhatsApp", "data": "Name, email, phone", "lawful_basis": "consent"},
+    {"purpose": "Suggest nearby businesses", "data": "Approximate location", "lawful_basis": "consent"}
+  ],
+  "collection_mandatory_info": "Your name and phone number are mandatory to make a booking. Email and location are voluntary.",
+  "consequences_of_not_providing": "Without a name and phone number we cannot confirm your booking or send reminders.",
+  "marketing_channels": ["email", "whatsapp"],
+  "marketing_products": "specials from Kasi Bookings and new features",
+  "marketing_existing_customer_exception": false,
+  "necessary_cookies": [
+    {"name": "kb_session", "provider": "Kasi Bookings", "purpose": "Keeps you signed in", "duration": "Session"},
+    {"name": "kb_csrf", "provider": "Kasi Bookings", "purpose": "Protects forms from forgery", "duration": "Session"}
+  ],
+  "analytics_tools": [
+    {"name": "PostHog", "country": "Germany", "purpose": "Understand how features are used", "duration": "12 months"}
+  ],
+  "marketing_tools": [
+    {"name": "Meta Pixel", "country": "United States", "purpose": "Measure advertising", "duration": "90 days"}
+  ],
+  "operators": [
+    {"name": "Supabase", "service": "Database and authentication", "data": "Accounts and bookings", "country": "United States", "agreement": "signed", "s72_basis": "s72(1)(a) binding agreement"},
+    {"name": "Paystack", "service": "Payments", "data": "Name, email, payment details", "country": "South Africa", "agreement": "signed"},
+    {"name": "Clickatell", "service": "SMS reminders", "data": "Name, phone, booking time", "country": "South Africa", "agreement": "pending"},
+    {"name": "OpenAI", "service": "AI booking assistant", "data": "Chat messages", "country": "United States", "agreement": "signed", "s72_basis": "s72(1)(a) binding agreement"}
+  ],
+  "hosting_region": "Supabase us-east-1 (United States)",
+  "cross_border_countries": ["United States", "Germany"],
+  "cross_border_consent": false,
+  "ai_features": true,
+  "ai_description": "Our chat assistant helps you find and book a slot. It reads your messages and your booking history to suggest times.",
+  "ai_provider": "OpenAI",
+  "ai_provider_country": "United States",
+  "ai_purpose": "help you find and book a slot",
+  "ai_retention": "30 days (VERIFY current provider setting)",
+  "automated_decisions": false,
+  "call_recording": false,
+  "data_sets": [
+    {"name": "public.profiles", "fields": "full_name;phone;email", "data_subjects": "Customers", "purpose": "Create accounts and manage bookings", "lawful_basis": "contract", "special_pi": false, "children": false, "retention": "2 years", "retention_trigger": "Last activity", "operators": "Supabase", "collection_point": "Sign-up form", "owner": "CTO"},
+    {"name": "public.bookings", "fields": "profile_id;business_id;slot;amount", "data_subjects": "Customers", "purpose": "Manage bookings and payments", "lawful_basis": "contract", "special_pi": false, "children": false, "retention": "5 years", "retention_trigger": "Date of tax return (VERIFY)", "operators": "Supabase;Paystack;Clickatell", "collection_point": "Booking flow", "owner": "CTO"},
+    {"name": "public.chat_messages", "fields": "profile_id;message;reply", "data_subjects": "Customers", "purpose": "AI booking assistant", "lawful_basis": "contract", "special_pi": false, "children": false, "retention": "90 days", "retention_trigger": "Message date", "operators": "Supabase;OpenAI", "collection_point": "Chat widget", "owner": "CTO"}
+  ],
+  "security_summary": "We use TLS, encryption at rest, row-level security on every table, multi-factor authentication for staff, and logs without personal information.",
+  "dsar_email": "privacy@kasibookings.example",
+  "dsar_sla_days": 21,
+  "effective_date": "2026-11-15",
+  "notice_version": "2.1"
+}

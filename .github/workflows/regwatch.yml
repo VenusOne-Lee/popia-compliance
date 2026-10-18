@@ -1,0 +1,63 @@
+name: Regulator watch
+
+on:
+  schedule:
+    # 1st of every month at 06:00 SAST (04:00 UTC)
+    - cron: "0 4 1 * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Report only: no issue, no state commit"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write   # commit regwatch/state.json
+  issues: write     # open law-change issues
+
+concurrency:
+  group: regwatch
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Ensure law-change label exists
+        if: ${{ !inputs.dry_run }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh label create law-change --color B60205 --description "Change in law or Regulator practice" 2>/dev/null || true
+
+      - name: Check Regulator pages
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DRY_RUN: ${{ inputs.dry_run && 'true' || 'false' }}
+        run: |
+          set -euo pipefail
+          if [ "$DRY_RUN" = "true" ]; then
+            python3 scripts/regwatch.py --dry-run --out regwatch-report.md
+          else
+            python3 scripts/regwatch.py --open-issue --update-state --fail-on-error --out regwatch-report.md
+          fi
+          cat regwatch-report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit state
+        if: ${{ !inputs.dry_run }}
+        run: |
+          if git diff --quiet -- regwatch/state.json; then
+            echo "State unchanged."
+            exit 0
+          fi
+          git config user.name "popia-regwatch[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add regwatch/state.json
+          git commit -m "regwatch: update seen items"
+          git push
