@@ -233,6 +233,11 @@
           "path": "popia/supabase/migrations/0003_security_checks.sql",
           "type": "registry:file",
           "target": "~/supabase/migrations/20261018000003_popia_security_checks.sql"
+        },
+        {
+          "path": "popia/supabase/migrations/0004_function_guards.sql",
+          "type": "registry:file",
+          "target": "~/supabase/migrations/20261018000004_popia_function_guards.sql"
         }
       ]
     },

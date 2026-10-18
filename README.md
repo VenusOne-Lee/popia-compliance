@@ -27,6 +27,10 @@ Law current to **18 October 2026**. See [regulatory watch](references/10-regulat
 | **CI** | GitHub Action, pre-commit hook, scan badge | [`action.yml`](action.yml), [`docs/automation.md`](docs/automation.md) | Available |
 | **Evals** | Test cases that check AI tools follow the skill | [`evals/`](evals) | Available |
 
+## Start here
+
+New project, existing codebase or Lovable: [docs/quickstart.md](docs/quickstart.md) has a short path for each.
+
 ## Install
 
 ### Claude (claude.ai, Claude Desktop) and Claude Code

@@ -74,7 +74,7 @@ export function isValidSaId(input: string): boolean {
   const id = normaliseSaId(input);
   if (!/^\d{13}$/.test(id)) return false;
   if (parseDob(id) === null) return false;
-  if (!(id[10] in CITIZENSHIP)) return false;
+  if (!(id.charAt(10) in CITIZENSHIP)) return false;
   return luhnOk(id);
 }
 
@@ -87,11 +87,13 @@ export function parseSaId(input: string): ParsedSaId | { valid: false } {
   const id = normaliseSaId(input);
   if (!isValidSaId(id)) return { valid: false };
   const dob = parseDob(id) as Date;
+  const citizenship = CITIZENSHIP[id.charAt(10)];
+  if (!citizenship) return { valid: false };
   return {
     valid: true,
     dateOfBirth: dob.toISOString().slice(0, 10),
     sex: Number(id.slice(6, 10)) < 5000 ? "female" : "male",
-    citizenship: CITIZENSHIP[id[10]],
+    citizenship,
   };
 }
 
