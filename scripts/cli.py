@@ -15,8 +15,8 @@ command for details. Stdlib only. Python 3.8+.
 
 Run it without installing (pick one):
 
-    uvx --from git+https://github.com/VenusOne-Lee/popia-compliance popia-kit scan .
-    pipx run --spec git+https://github.com/VenusOne-Lee/popia-compliance popia-kit scan .
+    uvx popia-kit scan .
+    pipx run popia-kit scan .
     npx -y github:VenusOne-Lee/popia-compliance scan .
 
 Engineering guidance, not legal advice. See DISCLAIMER.md.

@@ -4,7 +4,7 @@
 
 It is pure Python 3.8 or later, standard library only. Two ways to run it:
 
-- **No clone:** `uvx --from git+https://github.com/VenusOne-Lee/popia-compliance popia-kit mcp` (or `pipx run --spec git+https://github.com/VenusOne-Lee/popia-compliance popia-kit mcp`). Use that as the command in your client config.
+- **No clone:** `uvx popia-kit mcp` (or `pipx run popia-kit mcp`). Use that as the command in your client config.
 - **From a clone:** point your client at `mcp/server.py`. It reads the repository it sits in.
 
 This is engineering guidance, not legal advice. Every tool result ends with that line. See [DISCLAIMER.md](../DISCLAIMER.md).

@@ -42,7 +42,7 @@ Copy the matching file from [`adapters/`](adapters) into your project. Table and
 
 ### Any MCP client
 ```bash
-claude mcp add popia -- uvx --from git+https://github.com/VenusOne-Lee/popia-compliance popia-kit mcp
+claude mcp add popia -- uvx popia-kit mcp
 # or, from a clone:
 claude mcp add popia -- python3 /path/to/popia-compliance/mcp/server.py
 ```
@@ -50,20 +50,20 @@ Config for Claude Desktop, Cursor, VS Code and Windsurf: [`docs/mcp.md`](docs/mc
 
 ## Quick start
 
-Python 3.8 or newer and nothing else. No install needed: run it straight from GitHub with whichever tool you already have.
+Python 3.8 or newer and nothing else. No install needed: run it from [PyPI](https://pypi.org/project/popia-kit/) with whichever tool you already have.
 
 ```bash
 # uv
-uvx --from git+https://github.com/VenusOne-Lee/popia-compliance popia-kit scan .
+uvx popia-kit scan .
 
 # pipx
-pipx run --spec git+https://github.com/VenusOne-Lee/popia-compliance popia-kit scan .
+pipx run popia-kit scan .
 
 # npm (still runs the Python tools, so Python 3.8+ must be installed)
 npx -y github:VenusOne-Lee/popia-compliance scan .
 ```
 
-To keep it installed: `pipx install git+https://github.com/VenusOne-Lee/popia-compliance`, then use `popia-kit` anywhere.
+To keep it installed: `pipx install popia-kit`, then use `popia-kit` anywhere. For the latest code on `main`, use `uvx --from git+https://github.com/VenusOne-Lee/popia-compliance popia-kit scan .`
 
 | Command | What it does |
 |---|---|

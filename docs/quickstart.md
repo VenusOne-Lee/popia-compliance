@@ -54,7 +54,7 @@ Fix anything rated critical or high. A lead-capture table that allows anonymous 
 **6. Draft the paperwork.**
 
 ```bash
-uvx --from git+https://github.com/VenusOne-Lee/popia-compliance popia-kit pack --interactive --out ./compliance-pack
+uvx popia-kit pack --interactive --out ./compliance-pack
 ```
 
 Have someone qualified review the drafts before you publish them.
@@ -66,10 +66,10 @@ Have someone qualified review the drafts before you publish them.
 **1. Scan.** No install needed:
 
 ```bash
-uvx --from git+https://github.com/VenusOne-Lee/popia-compliance popia-kit scan . --format md --out popia-scan.md
+uvx popia-kit scan . --format md --out popia-scan.md
 ```
 
-No `uv`? Use `pipx run --spec git+https://github.com/VenusOne-Lee/popia-compliance popia-kit scan .` or `npx -y github:VenusOne-Lee/popia-compliance scan .`.
+No `uv`? Use `pipx run popia-kit scan .` or `npx -y github:VenusOne-Lee/popia-compliance scan .`.
 
 **2. Triage.** Every finding is a lead, not a verdict. Mark each one confirmed, false positive or needs info. Silence a confirmed false positive with `popia-ignore: RULE-ID` on the line, or a path in `.popiaignore`.
 
@@ -82,7 +82,7 @@ No `uv`? Use `pipx run --spec git+https://github.com/VenusOne-Lee/popia-complian
 **4. Check the live site** you own:
 
 ```bash
-uvx --from git+https://github.com/VenusOne-Lee/popia-compliance popia-kit site-check https://your-site.co.za --out site-check.md
+uvx popia-kit site-check https://your-site.co.za --out site-check.md
 ```
 
 **5. Stop it coming back.** Add the GitHub Action from path 1, step 5, or the pre-commit hook in [docs/automation.md](automation.md).
