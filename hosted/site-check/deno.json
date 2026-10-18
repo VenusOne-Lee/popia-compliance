@@ -1,0 +1,12 @@
+{
+  "tasks": {
+    "test": "SITE_CHECK_DISABLE_SERVE=1 deno test --allow-env tests/",
+    "test:sql": "bash tests/sql/run_sql_tests.sh",
+    "test:node": "cd adapters && npm install --no-audit --no-fund && npm test",
+    "check": "deno check supabase/functions/site-check/index.ts supabase/functions/site-check/core.ts tests/",
+    "check:adapters": "cd adapters && deno check *.ts test/",
+    "lint": "deno lint supabase/ adapters/*.ts adapters/test/ tests/"
+  },
+  "fmt": { "lineWidth": 130, "include": ["supabase/functions/", "adapters/", "tests/"], "exclude": ["adapters/node_modules/"] },
+  "lint": { "rules": { "exclude": ["no-explicit-any", "no-import-prefix"] } }
+}

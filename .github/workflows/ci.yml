@@ -98,3 +98,38 @@ jobs:
           npm pack --pack-destination /tmp
           cd /tmp && npx -y ./popia-kit-*.tgz version && npx -y ./popia-kit-*.tgz scan "$GITHUB_WORKSPACE/tests/fixtures/demo-app" > /tmp/npx-scan.txt || true
           grep -q "summary:" /tmp/npx-scan.txt
+
+  site-check:
+    name: Hosted site check (Deno, Node, SQL)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: hosted/site-check
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: denoland/setup-deno@667a34cdef165d8d2b2e98dde39547c9daac7282 # v2.0.4
+        with:
+          deno-version: v2.x
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+
+      - name: Format, lint and type check
+        run: |
+          deno fmt --check
+          deno task lint
+          deno task check
+
+      - name: Unit tests (no network)
+        run: deno task test
+
+      - name: Node adapters
+        run: |
+          cd adapters && npm ci --no-audit --no-fund && cd ..
+          deno task check:adapters
+          cd adapters && npm test
+
+      - name: Migration tests on a throwaway Postgres
+        run: sudo -E bash tests/sql/run_sql_tests.sh

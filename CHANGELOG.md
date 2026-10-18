@@ -10,6 +10,7 @@ Legal content merged without a legal reviewer is marked `pending legal review` (
 - One-line install, no clone needed: `uvx --from git+https://github.com/VenusOne-Lee/popia-compliance popia-kit scan .`, the `pipx run` equivalent, or `npx -y github:VenusOne-Lee/popia-compliance scan .`. One `popia-kit` command with `scan`, `site-check`, `pack`, `badge`, `id` and `mcp`. Packaging files: `pyproject.toml` (package `popia-kit`) and `package.json`. CI installs the package into a clean environment and runs every command.
 - Legal reviewer route: reviewer terms in GOVERNANCE.md (`pending legal review`), a "Legal reviewer: volunteer" issue form, and a private contact address, popiakit@venusone.africa.
 - First real-model eval run, published in `evals/published/`: Claude Opus 5.5, 26 of 30 cases passed, mean score 0.98. The 4 failures pass after the fixes listed under Changed.
+- Hosted site check in `hosted/site-check/`: the passive site check as a Supabase Edge Function, with Node adapters for TanStack Start and similar hosts. Every hop is checked against private, loopback, link-local and metadata addresses. Per-IP and global rate limits, optional Turnstile, no logging, and only a salted IP hash kept for 2 hours. 94 unit tests, 27 SQL tests and 5 Node tests run in CI. Read the residual risks in its README before you host it.
 - Security workflow: Bandit, Semgrep, Gitleaks (full history) and CodeQL on every push and pull request, and weekly. Dependabot for GitHub Actions.
 
 ### Changed
