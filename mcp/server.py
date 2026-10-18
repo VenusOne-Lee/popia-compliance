@@ -19,7 +19,6 @@ import re
 import shutil
 import sys
 import tempfile
-import traceback
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -360,15 +359,55 @@ def _fmt_scan(ps, res: dict, fmt: str) -> str:
     return ps.fmt_md(res)
 
 
+# Paths an agent may never point the scanner at, even if asked. An agent's instructions can come
+# from untrusted content (prompt injection), so the server, not the model, enforces these limits.
+_HOME = Path.home().resolve()
+SENSITIVE_DIRS = [Path(p).expanduser().resolve() for p in (
+    "~/.ssh", "~/.aws", "~/.gnupg", "~/.config", "~/.kube", "~/.docker", "~/.azure", "~/.netrc",
+    "~/Library/Keychains", "/etc", "/var", "/usr", "/bin", "/sbin", "/boot", "/proc", "/sys", "/dev",
+    "/System", "/Library", "/private")]
+
+
+def _allowed_roots() -> List[Path]:
+    roots = os.environ.get("POPIA_SCAN_ROOTS", "")
+    return [Path(r).expanduser().resolve() for r in roots.split(os.pathsep) if r.strip()]
+
+
+def _safe_scan_path(path: str) -> Path:
+    p = Path(os.path.expanduser(path)).resolve()
+    if p in (Path(p.anchor), _HOME):
+        raise ToolError("Refusing to scan a filesystem root or your whole home folder. Point at a project folder.")
+    for d in SENSITIVE_DIRS:
+        if p == d or d in p.parents:
+            raise ToolError("Refusing to scan a system or credentials folder.")
+    roots = _allowed_roots()
+    if roots and not any(p == r or r in p.parents for r in roots):
+        raise ToolError("Path is outside POPIA_SCAN_ROOTS.")
+    return p
+
+
+def _safe_out_dir(out_dir: str) -> Path:
+    """Generated packs go only into a new or empty folder inside the working directory
+    (or POPIA_SCAN_ROOTS), so a tool call cannot overwrite existing files."""
+    base = Path.cwd().resolve()
+    p = (base / os.path.expanduser(out_dir)).resolve()
+    roots = _allowed_roots() or [base]
+    if not any(p == r or r in p.parents for r in roots) or p in roots:
+        raise ToolError("out_dir must be a new sub-folder of the working directory.")
+    if p.exists() and (not p.is_dir() or any(p.iterdir())):
+        raise ToolError("out_dir already exists and is not empty. Choose a new folder.")
+    return p
+
+
 def tool_popia_scan(args: dict) -> str:
     path = _str(args, "path")
     fmt = _str(args, "format", False, "md")
     if fmt not in ("md", "json"):
         raise RpcError(INVALID_PARAMS, "format must be md or json")
     rules = _str(args, "rules", False)
-    p = Path(os.path.expanduser(path))
+    p = _safe_scan_path(path)
     if not p.exists():
-        raise ToolError(f"Path not found: {path}")
+        raise ToolError("Path not found.")
     ps = _import("popia_scan")
     res = ps.scan(str(p), [r for r in rules.split(",") if r.strip()] if rules else None, _sev(args))
     return _fmt_scan(ps, res, fmt)
@@ -407,7 +446,12 @@ def tool_popia_site_check(args: dict) -> str:
     if not re.match(r"^https?://[^\s/]+", url, re.I):
         raise RpcError(INVALID_PARAMS, "url must start with http:// or https://")
     sc = _import("site_check")
-    res = sc.check(url)
+    # URLs reach this tool from agents, so never let them reach private or internal services (SSRF).
+    allow_private = os.environ.get("POPIA_ALLOW_PRIVATE_URLS") == "1"
+    try:
+        res = sc.check(url, block_private=not allow_private)
+    except getattr(sc, "BlockedTarget", ValueError) as e:
+        raise ToolError(f"Refused: {e}.")
     fmt_md = getattr(sc, "fmt_md", None)
     return fmt_md(res) if fmt_md else json.dumps(res, indent=2)
 
@@ -418,7 +462,8 @@ def tool_popia_generate_pack(args: dict) -> str:
         raise RpcError(INVALID_PARAMS, "answers must be an object")
     out_dir = _str(args, "out_dir", False)
     pk = _import("popia_pack")
-    files = pk.generate(answers, os.path.expanduser(out_dir) if out_dir else None)
+    target = _safe_out_dir(out_dir) if out_dir else None
+    files = pk.generate(answers, str(target) if target else None)
     md = ["# POPIA document pack", "",
           f"{len(files)} files generated." + (f" Written to `{out_dir}`." if out_dir else " Not written to disk."),
           "Drafts need review by the Information Officer and, where flagged, a POPIA attorney.", ""]
@@ -556,8 +601,10 @@ class Server:
         except ToolError as e:
             text, is_error = f"Error: {e}", True
         except Exception as e:  # tool bugs become tool errors, not protocol errors
-            log(f"tool {name} failed:\n{traceback.format_exc()}")
-            text, is_error = f"Error: {type(e).__name__}: {e}", True
+            # Exception messages can hold URLs, tokens, personal information or local paths.
+            # Log and return the type only.
+            log(f"tool {name} failed: {type(e).__name__}")
+            text, is_error = f"Error: the tool failed ({type(e).__name__}). Check the input and try again.", True
         if len(text) > MAX_OUTPUT_CHARS:
             text = text[:MAX_OUTPUT_CHARS] + "\n\n[output truncated]"
         text = text.rstrip() + "\n\n---\n" + DISCLAIMER
@@ -601,7 +648,7 @@ class Server:
         except RpcError as e:
             return _err(mid, e.code, e.message, e.data)
         except Exception as e:
-            log(f"internal error on {method}:\n{traceback.format_exc()}")
+            log(f"internal error on {method}: {type(e).__name__}")
             return _err(mid, INTERNAL_ERROR, f"Internal error: {type(e).__name__}")
         return {"jsonrpc": "2.0", "id": mid, "result": result}
 

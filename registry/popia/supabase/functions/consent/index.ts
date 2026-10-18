@@ -30,6 +30,7 @@ import {
 const METHODS = "GET, POST, OPTIONS";
 const PURPOSE_RE = /^[a-z0-9_]{1,100}$/;
 const CHANNEL_RE = /^[a-z0-9_]{1,50}$/;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 interface IncomingEvent {
   purpose?: unknown;
@@ -111,7 +112,10 @@ Deno.serve(async (req) => {
         source_url: cleanUrl(e.source_url),
         ip_hash: ipHash,
         user_agent: ua,
-        competent_person_id: typeof e.competent_person_id === "string" ? e.competent_person_id : null,
+        // s35: the id of the parent or guardian record. Only a UUID is accepted; verifying that the
+        // person really is the competent person happens in your own flow, not here.
+        competent_person_id:
+          typeof e.competent_person_id === "string" && UUID_RE.test(e.competent_person_id) ? e.competent_person_id : null,
       });
     }
 

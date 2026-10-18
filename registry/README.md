@@ -243,8 +243,12 @@ Replace the bracketed values first. Lovable writes the files through its agent, 
    supabase secrets set \
      ALLOWED_ORIGINS="https://example.co.za,https://www.example.co.za" \
      CONSENT_IP_SALT="$(openssl rand -hex 32)" \
-     UNSUBSCRIBE_SECRET="$(openssl rand -hex 32)"
+     UNSUBSCRIBE_SECRET="$(openssl rand -hex 32)" \
+     RECENT_AUTH_MINUTES="15" \
+     EXPORTS_PER_HOUR="3"
    ```
+
+   `RECENT_AUTH_MINUTES`: "Delete my account" needs a sign-in within this many minutes, so a stolen session cannot erase an account. When the function answers 401, ask the person to sign in again (password, magic link or OTP) and retry. `EXPORTS_PER_HOUR` limits "Download my data" per person.
 
    `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are provided to edge functions automatically. Never put the service role key in a `VITE_` or `NEXT_PUBLIC_` variable (s19).
 

@@ -91,10 +91,27 @@ def targets_from_list(f: str) -> List[str]:
     return out
 
 
+SAFE_CLONE_RX = re.compile(r"^(https://|git@[A-Za-z0-9.\-]+:)[^\s]+$")
+
+
 def clone(url: str, dest: str, timeout: int = 300) -> None:
-    env = {**os.environ, "GIT_TERMINAL_PROMPT": "0"}
-    subprocess.run(["git", "clone", "--depth", "1", "--quiet", "--no-tags", url, dest],
+    """Shallow clone of an untrusted repository, defensively.
+    - Only https:// and git@host: URLs. No local paths, file://, ext:: or other transports.
+    - "--" stops a URL such as "--upload-pack=..." being read as a git option.
+    - No hooks, no submodules, no LFS smudge, no credential prompts."""
+    if not SAFE_CLONE_RX.match(url) or url.startswith("-"):
+        raise ValueError("only https:// or git@host: repository URLs are allowed")
+    env = {**os.environ, "GIT_TERMINAL_PROMPT": "0", "GIT_LFS_SKIP_SMUDGE": "1",
+           "GIT_CONFIG_NOSYSTEM": "1", "GIT_ALLOW_PROTOCOL": "https:ssh"}
+    subprocess.run(["git", "-c", "core.hooksPath=/dev/null", "-c", "protocol.file.allow=never",
+                    "-c", "protocol.ext.allow=never", "clone", "--depth", "1", "--quiet", "--no-tags",
+                    "--no-recurse-submodules", "--", url, dest],
                    check=True, capture_output=True, timeout=timeout, env=env)
+
+
+def _redact_git_error(msg: str) -> str:
+    # Clone errors can echo the URL, including any embedded token.
+    return re.sub(r"(https?://)[^/@\s]+@", r"\1***@", msg)
 
 
 # --------------------------------------------------------------------------------------
@@ -133,11 +150,11 @@ def scan_targets(targets: List[str], scan_fn: Optional[Callable] = None, show_na
             entry = {"id": rid, "ok": True, **summarise_repo(res)}
         except subprocess.CalledProcessError as e:
             entry = {"id": rid, "ok": False, "error": "clone failed"}
-            print(f"[fleet] {rid}: clone failed ({(e.stderr or b'').decode(errors='replace').strip()[:200]})",
+            print(f"[fleet] {rid}: clone failed ({_redact_git_error((e.stderr or b'').decode(errors='replace').strip())[:200]})",
                   file=sys.stderr)
         except Exception as e:  # keep going across the fleet
             entry = {"id": rid, "ok": False, "error": type(e).__name__}
-            print(f"[fleet] {rid}: {type(e).__name__}: {e}", file=sys.stderr)
+            print(f"[fleet] {rid}: {type(e).__name__}", file=sys.stderr)
         finally:
             if tmp:
                 shutil.rmtree(tmp, ignore_errors=True)

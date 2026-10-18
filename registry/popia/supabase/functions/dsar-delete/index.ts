@@ -23,6 +23,9 @@ import {
   errorResponse,
   HttpError,
   json,
+  listAllObjects,
+  removeObjects,
+  requireRecentSignIn,
   requireUser,
 } from "../_shared/privacy-config.ts";
 
@@ -33,6 +36,8 @@ Deno.serve(async (req) => {
     assertOrigin(req);
     const admin = adminClient();
     const user = await requireUser(req, admin);
+    // Deletion is irreversible: require a fresh sign-in, not just any valid session.
+    requireRecentSignIn(user);
 
     let body: { confirm?: unknown } = {};
     try {
@@ -80,12 +85,14 @@ Deno.serve(async (req) => {
     }
 
     for (const bucket of PRIVACY_BUCKETS) {
-      const { data } = await admin.storage.from(bucket).list(user.id, { limit: 1000 });
-      const paths = (data ?? []).map((f) => `${user.id}/${f.name}`);
+      // Every page and sub-folder. A failed listing is a failure, never "nothing to delete".
       let ok = true;
-      if (paths.length > 0) {
-        const { error } = await admin.storage.from(bucket).remove(paths);
-        ok = !error;
+      try {
+        const paths = await listAllObjects(admin, bucket, user.id);
+        await removeObjects(admin, bucket, paths);
+        ok = (await listAllObjects(admin, bucket, user.id)).length === 0;
+      } catch {
+        ok = false;
       }
       results.push({ store: `storage:${bucket}`, mode: "delete", ok });
     }

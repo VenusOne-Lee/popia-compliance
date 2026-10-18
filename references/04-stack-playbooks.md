@@ -58,6 +58,10 @@ create policy "own profile update" on public.profiles
 -- lead capture: anon may insert, nobody may read from the client
 alter table public.leads enable row level security;
 create policy "anon insert leads" on public.leads for insert to anon with check (true);
+-- Public insert invites spam and abuse: add a CAPTCHA or Turnstile check in an edge function,
+-- or insert through an edge function with rate limiting instead of directly from the browser.
+-- Constrain what can be written:
+alter table public.leads add constraint leads_email_len check (char_length(email) <= 254);
 -- no select policy for anon/authenticated → reads only via service role on the server
 ```
 - Storage: make PI buckets private; serve with `createSignedUrl(path, 60)`.

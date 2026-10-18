@@ -4,6 +4,24 @@ Code follows semantic versioning. Entries that reflect a change in law are heade
 
 Legal content merged without a legal reviewer is marked `pending legal review` (see GOVERNANCE.md).
 
+## [1.0.1] - 2026-10-18
+
+Security hardening release. No change to legal content.
+
+### Security
+- `site_check`: reports and errors no longer include credentials, query strings or fragments from URLs; embedded credentials are never sent; cookie `Secure`, `HttpOnly` and `SameSite` flags are read from parsed attributes, so cookie values cannot fake them; new `--block-private` mode (on by default through MCP) refuses private, loopback, link-local and reserved targets on every redirect hop; redirects are limited to http and https.
+- MCP server: unexpected errors return and log the exception type only; `popia_scan` refuses filesystem roots, the home folder and credential or system folders (optionally limited further with `POPIA_SCAN_ROOTS`); `popia_generate_pack` writes only to a new, empty sub-folder of the working directory; `popia_site_check` blocks private network targets unless `POPIA_ALLOW_PRIVATE_URLS=1`.
+- Scanner: no longer follows symlinks out of the scanned tree.
+- Fleet scan: clones only `https://` or `git@host:` URLs, separates the URL with `--`, disables hooks, submodules, LFS smudge and the file and ext transports, and redacts tokens from clone errors.
+- Supabase functions: account deletion requires a recent sign-in (`RECENT_AUTH_MINUTES`, default 15); deletion and export list every page and sub-folder of storage and treat listing errors as failures, never as empty; exports are rate limited (`EXPORTS_PER_HOUR`, default 3); `competent_person_id` must be a UUID.
+- GitHub Actions in the composite action, workflows and examples are pinned to full commit SHAs.
+- `regwatch` fetches https sources only.
+- Reference snippets: the retention function now pins `search_path` and restricts `EXECUTE`; the SA ID masking example is corrected; the public lead insert policy carries an abuse warning and a length constraint.
+- Replaced a real-format sample ID number in `sa_id.py` documentation with a synthetic one. Added `.popiaignore` so a self-scan of this repo skips deliberate test fixtures.
+
+### Credit
+Findings 1 to 4 (URL leakage, cookie flag spoofing, MCP error leakage, incomplete storage deletion and export) came from an external review shared by the maintainer. The remaining items came from this review.
+
 ## [1.0.0] - 2026-10-18
 
 First public release. All legal content: `pending legal review`.
