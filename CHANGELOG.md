@@ -7,6 +7,7 @@ Legal content merged without a legal reviewer is marked `pending legal review` (
 ## [Unreleased]
 
 ### Added
+- Release workflow: a version tag publishes to PyPI and npm with trusted publishing and npm provenance, then creates a GitHub release. Setup in docs/releasing.md.
 - One-line install, no clone needed: `uvx --from git+https://github.com/VenusOne-Lee/popia-compliance popia-kit scan .`, the `pipx run` equivalent, or `npx -y github:VenusOne-Lee/popia-compliance scan .`. One `popia-kit` command with `scan`, `site-check`, `pack`, `badge`, `id` and `mcp`. Packaging files: `pyproject.toml` (package `popia-kit`) and `package.json`. CI installs the package into a clean environment and runs every command.
 - Legal reviewer route: reviewer terms in GOVERNANCE.md (`pending legal review`), a "Legal reviewer: volunteer" issue form, and a private contact address, popiakit@venusone.africa.
 - First real-model eval run, published in `evals/published/`: Claude Opus 5.5, 26 of 30 cases passed, mean score 0.98. The 4 failures pass after the fixes listed under Changed.
@@ -19,6 +20,7 @@ Legal content merged without a legal reviewer is marked `pending legal review` (
 - `evals/run_evals.py` refuses provider URLs that are not http or https.
 
 ### Fixed
+- Build output (`build/`, `popia_kit.egg-info/`) is no longer tracked in git.
 - Hosted site check type checks under strict TypeScript (`noUncheckedIndexedAccess`, `exactOptionalPropertyTypes` and related flags), so strict projects can copy `core.ts` without `@ts-nocheck`. Type-only change, CI now enforces the flags.
 - Edge functions: "Delete my account" now checks when the session making the request signed in (its `amr` timestamp), not the account's last sign-in, which any other device could refresh. Client IP for consent evidence prefers `cf-connecting-ip` and `x-real-ip`, then the right-most `X-Forwarded-For` entry, because the left-most one is set by the client. Found in a review of the Lovable port.
 - Registry README: the edge functions do need the `privacy` schema exposed in the Data API. Add it to the existing list and apply `0004_function_guards.sql` first.
