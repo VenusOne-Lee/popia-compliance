@@ -4,6 +4,11 @@ Code follows semantic versioning. Entries that reflect a change in law are heade
 
 Legal content merged without a legal reviewer is marked `pending legal review` (see GOVERNANCE.md).
 
+## [Unreleased]
+
+### Fixed
+- `popia_badge`: badges built from a `site_check` JSON result now show the check date (`checked_at`), not just scanner results (`scanned_at`).
+
 ## [1.0.1] - 2026-10-18
 
 Security hardening release. No change to legal content.

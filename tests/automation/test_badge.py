@@ -23,6 +23,10 @@ class TestBadge(unittest.TestCase):
     def test_message(self):
         self.assertEqual(popia_badge.message(res(high=2)), "0 critical · 2 high · 2026-10-18")
 
+    def test_site_check_date(self):
+        site = {"summary": {"medium": 1}, "checked_at": "2026-10-18T09:00:00+00:00"}
+        self.assertEqual(popia_badge.message(site), "0 critical · 0 high · 2026-10-18")
+
     def test_colour_by_worst(self):
         self.assertIn(popia_badge.COLOURS["critical"], popia_badge.render(res(critical=1, low=4)))
         self.assertIn(popia_badge.COLOURS["medium"], popia_badge.render(res(medium=1)))
