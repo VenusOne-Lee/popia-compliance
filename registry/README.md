@@ -232,7 +232,7 @@ Replace the bracketed values first. Lovable writes the files through its agent, 
 
 ## Supabase setup
 
-1. **Expose the schema** (only if you call `privacy` tables from the browser with `supabase.schema("privacy")`). Dashboard, Project Settings, API, Exposed schemas: add `privacy`. Grants and RLS still decide access. The edge functions use the service role and do not need this.
+1. **Expose the schema.** The edge functions call `admin.schema("privacy")` through the Data API, so `privacy` must be in the exposed schemas: Dashboard, Project Settings, Data API, Exposed schemas, add `privacy` to the list that is already there. Don't replace the list. Grants and RLS still decide access: anon gets nothing, signed-in users can read only their own consent events and requests. Apply `0004_function_guards.sql` before you expose it, and check `privacy.security_report()` returns no `definer_function_exposed` rows.
 
 2. **Apply migrations**
 

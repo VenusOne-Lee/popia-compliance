@@ -18,6 +18,8 @@ Legal content merged without a legal reviewer is marked `pending legal review` (
 - `evals/run_evals.py` refuses provider URLs that are not http or https.
 
 ### Fixed
+- Edge functions: "Delete my account" now checks when the session making the request signed in (its `amr` timestamp), not the account's last sign-in, which any other device could refresh. Client IP for consent evidence prefers `cf-connecting-ip` and `x-real-ip`, then the right-most `X-Forwarded-For` entry, because the left-most one is set by the client. Found in a review of the Lovable port.
+- Registry README: the edge functions do need the `privacy` schema exposed in the Data API. Add it to the existing list and apply `0004_function_guards.sql` first.
 - Supabase: new migration `0004_function_guards.sql`. `privacy.redact_consent_events` now refuses API callers that are not `service_role`, even if a grant is left open, and `privacy.security_report()` flags security definer functions that `anon` or `authenticated` can execute. Found in an end-to-end test on Lovable Cloud, where the migration tool skipped a revoke and left the function executable by any signed-in user.
 - Components compile under strict TypeScript settings (`noPropertyAccessFromIndexSignature`, `exactOptionalPropertyTypes`, `noUncheckedIndexedAccess`), which Lovable's current template turns on.
 - `popia_badge`: badges built from a `site_check` JSON result now show the check date (`checked_at`), not just scanner results (`scanned_at`).

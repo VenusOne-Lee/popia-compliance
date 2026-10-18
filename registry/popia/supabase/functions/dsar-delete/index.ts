@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
     const admin = adminClient();
     const user = await requireUser(req, admin);
     // Deletion is irreversible: require a fresh sign-in, not just any valid session.
-    requireRecentSignIn(user);
+    requireRecentSignIn(user, req);
 
     let body: { confirm?: unknown } = {};
     try {
