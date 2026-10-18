@@ -6,6 +6,9 @@ Legal content merged without a legal reviewer is marked `pending legal review` (
 
 ## [Unreleased]
 
+### Changed
+- popia-kit is on PyPI. Install commands are now `uvx popia-kit scan .`, `pipx run popia-kit scan .` and `pipx install popia-kit`.
+
 ## [1.1.0] - 2026-10-18
 
 ### Added
