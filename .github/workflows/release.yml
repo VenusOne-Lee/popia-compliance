@@ -83,6 +83,8 @@ jobs:
   npm:
     name: Publish to npm
     needs: build
+    # Off until npm is set up. Turn on with a repository variable PUBLISH_NPM = true.
+    if: vars.PUBLISH_NPM == 'true'
     runs-on: ubuntu-latest
     environment:
       name: npm
@@ -113,6 +115,8 @@ jobs:
   github-release:
     name: GitHub release
     needs: [pypi, npm]
+    # Runs when PyPI succeeded and npm either succeeded or was switched off.
+    if: always() && needs.pypi.result == 'success' && (needs.npm.result == 'success' || needs.npm.result == 'skipped')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -127,4 +131,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" \
-            --notes "See CHANGELOG.md. Install: pipx install popia-kit, or npx popia-kit. Engineering guidance, not legal advice."
+            --notes "See CHANGELOG.md. Install: pipx install popia-kit, or run uvx popia-kit scan . Engineering guidance, not legal advice."
