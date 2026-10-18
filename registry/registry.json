@@ -1,0 +1,277 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "popia",
+  "homepage": "https://github.com/VenusOne-Lee/popia-compliance",
+  "items": [
+    {
+      "name": "consent-provider",
+      "type": "registry:component",
+      "title": "Consent provider",
+      "description": "ConsentProvider and useConsent hook. Necessary, analytics and marketing categories, versioned consent, safe localStorage persistence and an onChange callback to record consent server-side. POPIA s11, s69, s18.",
+      "dependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "popia/consent/consent-provider.tsx",
+          "type": "registry:component",
+          "target": "components/popia/consent-provider.tsx"
+        }
+      ]
+    },
+    {
+      "name": "consent-banner",
+      "type": "registry:component",
+      "title": "Consent banner",
+      "description": "Cookie and tracker banner with equally prominent Accept all and Reject all, plus a Choose dialog with per-category switches. No dark patterns. POPIA s69, s18.",
+      "dependencies": [],
+      "registryDependencies": [
+        "button",
+        "dialog",
+        "label",
+        "switch",
+        "https://raw.githubusercontent.com/VenusOne-Lee/popia-compliance/main/registry/r/consent-provider.json"
+      ],
+      "files": [
+        {
+          "path": "popia/consent/consent-banner.tsx",
+          "type": "registry:component",
+          "target": "components/popia/consent-banner.tsx"
+        }
+      ]
+    },
+    {
+      "name": "consent-gate",
+      "type": "registry:component",
+      "title": "Consent gate",
+      "description": "ConsentGate renders children or loads scripts only after consent. Includes loadScript and Google Consent Mode v2 helpers with denied defaults. POPIA s69.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://raw.githubusercontent.com/VenusOne-Lee/popia-compliance/main/registry/r/consent-provider.json"
+      ],
+      "files": [
+        {
+          "path": "popia/consent/consent-gate.tsx",
+          "type": "registry:component",
+          "target": "components/popia/consent-gate.tsx"
+        }
+      ]
+    },
+    {
+      "name": "consent-system",
+      "type": "registry:component",
+      "title": "Consent system",
+      "description": "Everything for cookie and tracker consent in one install: provider, banner, gate and consent record helpers. POPIA s11, s18, s69.",
+      "dependencies": [],
+      "registryDependencies": [
+        "button",
+        "dialog",
+        "label",
+        "switch"
+      ],
+      "files": [
+        {
+          "path": "popia/consent/consent-provider.tsx",
+          "type": "registry:component",
+          "target": "components/popia/consent-provider.tsx"
+        },
+        {
+          "path": "popia/consent/consent-banner.tsx",
+          "type": "registry:component",
+          "target": "components/popia/consent-banner.tsx"
+        },
+        {
+          "path": "popia/consent/consent-gate.tsx",
+          "type": "registry:component",
+          "target": "components/popia/consent-gate.tsx"
+        },
+        {
+          "path": "popia/lib/consent-record.ts",
+          "type": "registry:lib",
+          "target": "lib/popia/consent-record.ts"
+        }
+      ]
+    },
+    {
+      "name": "consent-record",
+      "type": "registry:lib",
+      "title": "Consent record helpers",
+      "description": "Types and helpers to build consent event payloads with exact wording and a SHA-256 wording hash. POPIA s11(2)(a) burden of proof.",
+      "dependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "popia/lib/consent-record.ts",
+          "type": "registry:lib",
+          "target": "lib/popia/consent-record.ts"
+        }
+      ]
+    },
+    {
+      "name": "sa-id",
+      "type": "registry:lib",
+      "title": "SA ID helpers",
+      "description": "isValidSaId, parseSaId and maskSaId for South African ID numbers. Luhn and date validation. POPIA s19, s57.",
+      "dependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "popia/lib/sa-id.ts",
+          "type": "registry:lib",
+          "target": "lib/popia/sa-id.ts"
+        }
+      ]
+    },
+    {
+      "name": "redact",
+      "type": "registry:lib",
+      "title": "Redact for logging",
+      "description": "Redact emails, SA ID numbers, SA phone numbers, card and account numbers and tokens from strings and objects before logging. POPIA s19, s14.",
+      "dependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "popia/lib/redact.ts",
+          "type": "registry:lib",
+          "target": "lib/popia/redact.ts"
+        }
+      ]
+    },
+    {
+      "name": "marketing-opt-in",
+      "type": "registry:component",
+      "title": "Marketing opt-in (Form 4 style)",
+      "description": "Direct marketing opt-in substantially similar to Form 4. Unticked box per channel, business identity, what is marketed, how to withdraw. Emits a consent record with wording and hash. POPIA s69, Reg 6.",
+      "dependencies": [],
+      "registryDependencies": [
+        "checkbox",
+        "label",
+        "https://raw.githubusercontent.com/VenusOne-Lee/popia-compliance/main/registry/r/consent-record.json"
+      ],
+      "files": [
+        {
+          "path": "popia/forms/marketing-opt-in.tsx",
+          "type": "registry:component",
+          "target": "components/popia/marketing-opt-in.tsx"
+        }
+      ]
+    },
+    {
+      "name": "collection-notice",
+      "type": "registry:component",
+      "title": "Collection notice",
+      "description": "Short notice at the point of collection with a link to the full privacy notice. POPIA s18.",
+      "dependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "popia/forms/collection-notice.tsx",
+          "type": "registry:component",
+          "target": "components/popia/collection-notice.tsx"
+        }
+      ]
+    },
+    {
+      "name": "sa-id-input",
+      "type": "registry:component",
+      "title": "SA ID input",
+      "description": "SA ID number input with Luhn and date validation, masked display after blur and a why-we-need-it helper. Never logs the value. POPIA s10, s18, s19.",
+      "dependencies": [],
+      "registryDependencies": [
+        "input",
+        "label",
+        "https://raw.githubusercontent.com/VenusOne-Lee/popia-compliance/main/registry/r/sa-id.json"
+      ],
+      "files": [
+        {
+          "path": "popia/forms/sa-id-input.tsx",
+          "type": "registry:component",
+          "target": "components/popia/sa-id-input.tsx"
+        }
+      ]
+    },
+    {
+      "name": "privacy-centre",
+      "type": "registry:component",
+      "title": "Privacy centre",
+      "description": "Account settings panel: download my data, delete my account, marketing preferences, withdraw consent, object (Form 1) and complain to the Information Regulator. POPIA s23, s24, s11(3), s69, s74.",
+      "dependencies": [],
+      "registryDependencies": [
+        "button",
+        "dialog",
+        "input",
+        "label",
+        "switch",
+        "https://raw.githubusercontent.com/VenusOne-Lee/popia-compliance/main/registry/r/consent-provider.json"
+      ],
+      "files": [
+        {
+          "path": "popia/account/privacy-centre.tsx",
+          "type": "registry:component",
+          "target": "components/popia/privacy-centre.tsx"
+        }
+      ]
+    },
+    {
+      "name": "supabase-privacy-schema",
+      "type": "registry:file",
+      "title": "Supabase privacy schema",
+      "description": "Migrations for schema privacy: data inventory, append-only consent events, DSAR requests, retention runs, access audit, retention job and a security self-check. RLS forced everywhere. POPIA s11, s14, s17, s19, s23, s24.",
+      "dependencies": [],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "popia/supabase/migrations/0001_privacy_schema.sql",
+          "type": "registry:file",
+          "target": "~/supabase/migrations/20261018000001_popia_privacy_schema.sql"
+        },
+        {
+          "path": "popia/supabase/migrations/0002_retention.sql",
+          "type": "registry:file",
+          "target": "~/supabase/migrations/20261018000002_popia_retention.sql"
+        },
+        {
+          "path": "popia/supabase/migrations/0003_security_checks.sql",
+          "type": "registry:file",
+          "target": "~/supabase/migrations/20261018000003_popia_security_checks.sql"
+        }
+      ]
+    },
+    {
+      "name": "supabase-privacy-functions",
+      "type": "registry:file",
+      "title": "Supabase privacy edge functions",
+      "description": "Deno edge functions for data export, account deletion, consent recording and one-click unsubscribe, with shared config. Identity from JWT only. POPIA s11(2), s19, s23, s24, s69(4).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://raw.githubusercontent.com/VenusOne-Lee/popia-compliance/main/registry/r/supabase-privacy-schema.json"
+      ],
+      "files": [
+        {
+          "path": "popia/supabase/functions/_shared/privacy-config.ts",
+          "type": "registry:file",
+          "target": "~/supabase/functions/_shared/privacy-config.ts"
+        },
+        {
+          "path": "popia/supabase/functions/dsar-export/index.ts",
+          "type": "registry:file",
+          "target": "~/supabase/functions/dsar-export/index.ts"
+        },
+        {
+          "path": "popia/supabase/functions/dsar-delete/index.ts",
+          "type": "registry:file",
+          "target": "~/supabase/functions/dsar-delete/index.ts"
+        },
+        {
+          "path": "popia/supabase/functions/consent/index.ts",
+          "type": "registry:file",
+          "target": "~/supabase/functions/consent/index.ts"
+        },
+        {
+          "path": "popia/supabase/functions/unsubscribe/index.ts",
+          "type": "registry:file",
+          "target": "~/supabase/functions/unsubscribe/index.ts"
+        }
+      ]
+    }
+  ]
+}
