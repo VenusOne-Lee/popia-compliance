@@ -39,7 +39,7 @@ Deno.test("actions: bands cover every severity once", () => {
 
 Deno.test("actions: copy has no dashes, no exclamation marks and no compliance claims", () => {
   const text = JSON.stringify(data);
-  assert(!/[–—!]/.test(text), "dash or exclamation mark");
+  assert(!/[\u2013\u2014!]/.test(text), "dash or exclamation mark");
   assert(!/\b(compliant|certified|approved)\b/i.test(text.replace("not a compliance certificate", "")), "claim");
   for (const k of Object.values<{ url: string }>(data.kit)) assert(k.url.startsWith("https://github.com/VenusOne-Lee/"), k.url);
 });
