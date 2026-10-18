@@ -92,7 +92,7 @@ jobs:
   popia:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: VenusOne-Lee/popia-compliance@0192dd213a41c62c2cfeb9e11221bad4af7bc729 # v1.0.0
         with: { fail-on: high }
 ```
