@@ -157,7 +157,8 @@ def fetch(url: str, ua: str, timeout: float) -> str:
     if not url.startswith("https://"):
         raise ValueError("regwatch sources must be https URLs")
     req = urllib.request.Request(url, headers={"User-Agent": ua, "Accept": "text/html"})
-    with urllib.request.urlopen(req, timeout=timeout) as r:  # nosec: fixed https sources from config
+    # Sources are https only (checked above).
+    with urllib.request.urlopen(req, timeout=timeout) as r:  # nosec B310
         data = r.read(MAX_BYTES)
         charset = r.headers.get_content_charset() or "utf-8"
     return data.decode(charset, errors="replace")

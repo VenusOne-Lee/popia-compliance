@@ -26,7 +26,7 @@ permissions:
   security-events: write
 steps:
   - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-  - uses: VenusOne-Lee/popia-compliance@v1.0.0
+  - uses: VenusOne-Lee/popia-compliance@0192dd213a41c62c2cfeb9e11221bad4af7bc729 # v1.0.0
     with:
       fail-on: high
 ```

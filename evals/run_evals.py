@@ -249,12 +249,15 @@ class ProviderError(RuntimeError):
 
 
 def _post(url: str, headers: Dict[str, str], body: dict, timeout: int = 180, retries: int = 3) -> dict:
+    if not url.lower().startswith(("https://", "http://")):
+        raise ProviderError("provider URL must use http or https")
     data = json.dumps(body).encode("utf-8")
     last = None
     for attempt in range(retries + 1):
         req = urllib.request.Request(url, data=data, headers=headers, method="POST")
         try:
-            with urllib.request.urlopen(req, timeout=timeout) as resp:
+            # Scheme checked above (http or https only).
+            with urllib.request.urlopen(req, timeout=timeout) as resp:  # nosec B310
                 return json.loads(resp.read().decode("utf-8"))
         except urllib.error.HTTPError as e:
             detail = e.read().decode("utf-8", "ignore")[:500]
