@@ -4,7 +4,7 @@
   "title": "Service role key exposed in a frontend env",
   "prompt": "I just noticed our Vite app has been shipping VITE_SUPABASE_SERVICE_ROLE_KEY to the browser for about three weeks. What now?",
   "context_files": [
-    "evals/fixtures/env-service-role/.env.local",
+    "evals/fixtures/env-service-role/env.local.txt",
     "evals/fixtures/env-service-role/supabaseClient.ts"
   ],
   "must": [
