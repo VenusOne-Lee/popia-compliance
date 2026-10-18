@@ -1,0 +1,17 @@
+name: Bug or error
+description: Something is broken or the guidance looks wrong.
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What's wrong
+    validations: { required: true }
+  - type: textarea
+    id: where
+    attributes:
+      label: File, command or tool affected
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected

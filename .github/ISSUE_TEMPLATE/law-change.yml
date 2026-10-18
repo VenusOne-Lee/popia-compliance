@@ -1,0 +1,51 @@
+name: Law change
+description: POPIA, the Regulations, a guidance note, a court decision or Regulator practice has changed.
+title: "[law-change] "
+labels: ["law-change", "legal-review"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks. Please link a primary source (Act, Government Gazette, inforegulator.org.za, court judgment). Don't include personal information.
+  - type: textarea
+    id: what
+    attributes:
+      label: What changed
+      description: One or two sentences in plain language.
+    validations: { required: true }
+  - type: input
+    id: source
+    attributes:
+      label: Primary source link
+    validations: { required: true }
+  - type: input
+    id: published
+    attributes:
+      label: Date published
+      placeholder: YYYY-MM-DD
+  - type: input
+    id: effective
+    attributes:
+      label: Effective date
+      placeholder: YYYY-MM-DD or "TBC"
+  - type: dropdown
+    id: status
+    attributes:
+      label: Status
+      options: ["In force", "Published, not in force", "Draft / signalled", "Disputed / in court"]
+    validations: { required: true }
+  - type: textarea
+    id: files
+    attributes:
+      label: Files likely affected
+      description: e.g. references/05-direct-marketing.md, templates/consent-patterns.md, scripts/rules/consent.py
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Update checklist (for the PR)
+      options:
+        - label: references/10-regulatory-watch.md updated first
+        - label: Affected references, templates, packs updated
+        - label: Scanner rules updated or added (with tests)
+        - label: Eval cases added or updated
+        - label: CHANGELOG entry under the effective date

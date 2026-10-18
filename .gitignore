@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+node_modules/
+.typecheck/
+.env
+.env.*
+!.env.example
+evals/results/
+.DS_Store
+*.log

@@ -1,0 +1,25 @@
+name: Scanner rule idea or false positive
+description: Propose a new scanner rule, or report a false positive or missed issue.
+labels: ["rule"]
+body:
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Type
+      options: ["New rule", "False positive", "Missed issue (false negative)"]
+    validations: { required: true }
+  - type: input
+    id: rule
+    attributes:
+      label: Rule ID (if existing)
+  - type: textarea
+    id: example
+    attributes:
+      label: Minimal code example
+      description: Synthetic data only. Never paste real secrets, ID numbers or personal information.
+      render: text
+    validations: { required: true }
+  - type: input
+    id: popia
+    attributes:
+      label: POPIA section(s)
