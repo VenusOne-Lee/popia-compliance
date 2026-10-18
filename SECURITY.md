@@ -19,7 +19,8 @@ We aim to acknowledge reports within 3 working days and to fix critical issues w
 - The site check is passive: ordinary page requests only. It never sends embedded credentials, and with `--block-private` (the default through MCP) it refuses private and internal network targets.
 - Scan reports redact detected secrets, ID numbers, card numbers and emails.
 - The MCP server returns only exception types on failure, refuses to scan system or credential folders, and never overwrites files when generating packs.
-- GitHub Actions used by this project are pinned to full commit SHAs. Pin this Action to a release tag or commit SHA in your own workflows.
+- GitHub Actions used by this project are pinned to full commit SHAs, and Dependabot keeps them current. Pin this Action to a commit SHA in your own workflows.
+- Every push and pull request runs the test suite (including the security regression tests), Bandit, Semgrep (Python, TypeScript and GitHub Actions rules), Gitleaks over the full history and CodeQL. The security checks also run weekly.
 - The hosted MCP server (when available) must not store submitted code, URLs or results.
 
 ## Adopters: secure defaults to keep

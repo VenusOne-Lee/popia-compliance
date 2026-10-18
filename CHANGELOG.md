@@ -6,6 +6,13 @@ Legal content merged without a legal reviewer is marked `pending legal review` (
 
 ## [Unreleased]
 
+### Added
+- Security workflow: Bandit, Semgrep, Gitleaks (full history) and CodeQL on every push and pull request, and weekly. Dependabot for GitHub Actions.
+
+### Changed
+- Docs and the example workflow pin this Action to a commit SHA instead of a tag.
+- `evals/run_evals.py` refuses provider URLs that are not http or https.
+
 ### Fixed
 - `popia_badge`: badges built from a `site_check` JSON result now show the check date (`checked_at`), not just scanner results (`scanned_at`).
 
