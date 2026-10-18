@@ -1,0 +1,21 @@
+{
+  "_warning": "DRAFT translation. Machine-assisted, not yet reviewed by a native speaker or legal reviewer. Do not use in production until status is 'reviewed' in i18n/README.md.",
+  "_warning_local": "KONSEP-vertaling. Masjien-ondersteun, nog nie deur 'n moedertaalspreker of regsbeoordelaar nagegaan nie. Moenie in produksie gebruik voordat die status 'reviewed' is in i18n/README.md nie.",
+  "lang": "af",
+  "status": "draft",
+  "source": "i18n/en/cookie-banner.json",
+  "title": "Koekies op hierdie webwerf",
+  "body": "Ons gebruik noodsaaklike koekies sodat hierdie webwerf werk. Met u toestemming gebruik ons ook analitiese en bemarkingskoekies. U kan u keuse enige tyd verander.",
+  "accept_all": "Aanvaar almal",
+  "reject_all": "Weier almal",
+  "choose": "Kies koekies",
+  "save": "Stoor keuses",
+  "necessary": "Noodsaaklik",
+  "analytics": "Analities",
+  "marketing": "Bemarking",
+  "descriptions": {
+    "necessary": "Nodig sodat die webwerf werk, byvoorbeeld om u aangemeld te hou. Altyd aan.",
+    "analytics": "Help ons verstaan hoe mense die webwerf gebruik sodat ons dit kan verbeter.",
+    "marketing": "Help ons om ons advertensies te meet en vir u relevante advertensies op ander webwerwe te wys."
+  }
+}

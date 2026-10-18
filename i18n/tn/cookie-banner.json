@@ -1,0 +1,21 @@
+{
+  "_warning": "DRAFT translation. Machine-assisted, not yet reviewed by a native speaker or legal reviewer. Do not use in production until status is 'reviewed' in i18n/README.md.",
+  "_warning_local": "PHETOLELO E SA FELELANG. E dirilwe ka thuso ya motšhine, ga e ise e sekasekwe ke sebui sa puo eno kgotsa mosekaseki wa molao. O se ka wa e dirisa go fitlha seemo se re 'reviewed' mo i18n/README.md.",
+  "lang": "tn",
+  "status": "draft",
+  "source": "i18n/en/cookie-banner.json",
+  "title": "Dikhukhi mo websaeteng e",
+  "body": "Re dirisa dikhukhi tse di tlhokegang gore websaete e e dire. Ka tetla ya gago, re dirisa gape dikhukhi tsa tshekatsheko le tsa papatso. O ka fetola tlhopho ya gago nako nngwe le nngwe.",
+  "accept_all": "Amogela tsotlhe",
+  "reject_all": "Gana tsotlhe",
+  "choose": "Tlhopha dikhukhi",
+  "save": "Boloka ditlhopho",
+  "necessary": "Tse di tlhokegang",
+  "analytics": "Tshekatsheko",
+  "marketing": "Papatso",
+  "descriptions": {
+    "necessary": "Di a tlhokega gore websaete e dire, sekao go go tshola o tsene. Di dula di butswe.",
+    "analytics": "Di re thusa go tlhaloganya gore batho ba dirisa websaete jang gore re e tokafatse.",
+    "marketing": "Di re thusa go lekanya dipapatso tsa rona le go go bontsha dipapatso tse di maleba mo diwebsaeteng tse dingwe."
+  }
+}

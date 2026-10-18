@@ -20,9 +20,9 @@ Law current to **18 October 2026**. See [regulatory watch](references/10-regulat
 | **Scanner** | Finds open tables, leaked keys, trackers before consent, pre-ticked boxes, PI in logs and more. Markdown, JSON, SARIF | [`scripts/popia_scan.py`](scripts/popia_scan.py) | Available |
 | **Site check** | Passive check of a live site: headers, cookies before consent, trackers, notices | [`scripts/site_check.py`](scripts/site_check.py) | Available |
 | **Components** | Consent banner, Form 4 opt-in, privacy centre, Supabase migrations and edge functions | [`registry/`](registry) | Available |
-| **Compliance pack** | Answer questions, get a draft privacy notice, cookie notice, ROPA, PAIA manual and more | [`scripts/popia_pack.py`](scripts/popia_pack.py), [`templates/`](templates) | Landing soon |
+| **Compliance pack** | Answer questions, get a draft privacy notice, cookie notice, ROPA, PAIA manual and more | [`scripts/popia_pack.py`](scripts/popia_pack.py), [`templates/`](templates) | Available |
 | **Sector packs** | Fintech, health, education and children, short-term rentals, e-commerce, HR | [`packs/`](packs) | Landing soon |
-| **Translations** | Draft notices in Afrikaans, isiZulu, isiXhosa and Setswana (review wanted) | [`i18n/`](i18n) | Landing soon |
+| **Translations** | Draft notices in Afrikaans, isiZulu, isiXhosa and Setswana (review wanted) | [`i18n/`](i18n) | Draft, needs native review |
 | **MCP server** | Lets any MCP-capable agent run the scanner and look up guidance | [`mcp/`](mcp), [`docs/mcp.md`](docs/mcp.md) | Landing soon |
 | **CI** | GitHub Action, pre-commit hook, scan badge | [`action.yml`](action.yml), [`docs/automation.md`](docs/automation.md) | Landing soon |
 | **Evals** | Test cases that check AI tools follow the skill | [`evals/`](evals) | Landing soon |
