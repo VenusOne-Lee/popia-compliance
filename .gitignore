@@ -11,3 +11,4 @@ evals/results/
 build/
 *.egg-info/
 *.tgz
+dist/

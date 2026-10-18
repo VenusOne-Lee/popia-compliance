@@ -1,7 +1,0 @@
-[console_scripts]
-popia-badge = popia_kit.cli:run_badge
-popia-kit = popia_kit.cli:main
-popia-mcp = popia_kit.cli:run_mcp
-popia-pack = popia_kit.cli:run_pack
-popia-scan = popia_kit.cli:run_scan
-popia-site-check = popia_kit.cli:run_site_check
