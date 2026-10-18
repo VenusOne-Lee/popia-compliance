@@ -21,7 +21,7 @@ Read the request and pick one (or chain them):
 | **Audit** | "Audit / review / check / is this compliant / pre-launch" | "Audit mode" below + `references/09-audit-procedure.md` |
 | **Breach** | Leak, hack, misdirected email, exposed bucket, lost laptop | `references/07-breach-response.md` immediately |
 | **Docs** | Privacy notice, consent wording, cookie banner, DSAR process, PAIA pointers, operator agreements | `templates/` + relevant reference |
-| **Explain** | "What does POPIA say about X" | `references/01-popia-legal-map.md` (cite sections) |
+| **Explain** | "What does POPIA say about X" | `references/01-popia-legal-map.md` (cite sections; where the Act gives a list of grounds or options, give the whole list, then say which fits) |
 
 ## Core mental model (keep this loaded)
 
@@ -57,7 +57,7 @@ When you write or change code that collects, stores, displays, sends or deletes 
 7. **Rights built in.** Account deletion, data export, correction, marketing opt-out, and objection paths exist in the product (or a documented manual process with an SLA).
 8. **Retention automated.** A scheduled job deletes or de-identifies data past its retention period; backups age out on a defined cycle.
 9. **Logs without PI.** Redact emails, phone numbers, ID numbers, tokens, and request bodies from logs/error trackers. Keep audit logs of *who accessed what* for sensitive data.
-10. **Third parties recorded.** Every new SDK/API that receives PI goes into the ROPA with: operator agreement status, hosting country, s72 basis.
+10. **Third parties recorded.** Every new SDK, API or hosted automation tool (Zapier, Make, n8n Cloud, Airtable) that receives PI is an operator and goes into the ROPA with: operator agreement status, hosting country, s72 basis.
 
 Full patterns with code (Supabase/Postgres, Next.js, Node, Python, Firebase, WordPress, Salesforce, mobile): `references/02-build-patterns.md` and `references/04-stack-playbooks.md`. Security control detail: `references/03-security-controls.md`.
 

@@ -158,6 +158,7 @@ service cloud.firestore {
 
 **Fix**
 - Map each automation in the ROPA (source → steps → destinations).
+- Each hosted tool in the chain (Zapier, Make, n8n Cloud, Airtable) is an **operator** (s20, s21: written agreement) and usually a **cross-border transfer** (s72: record the ground). Self-hosted n8n: whoever runs the server is the operator, and the server region decides whether s72 applies.
 - Pass only required fields; set task history retention to the minimum.
 - Airtable: no public shared views of PI; restrict base access.
 - n8n: auth on, HTTPS, secrets in credentials store, execution data pruning on.

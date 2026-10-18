@@ -168,6 +168,28 @@ Tools that can't be called through an API can still be scored with the same rubr
 
 The three newsletter cases (`build-newsletter-signup`, `build-newsletter-cursor`, `build-newsletter-lovable`) are the same scenario framed for different tools. Run them across tools to compare adapters.
 
+## Published results
+
+Runs we publish live in [`published/`](published). Each has a JSON file (answers and per-item grades) and a Markdown summary.
+
+| Date | Model | Cases | Passed | Mean score | Notes |
+|---|---|---|---|---|---|
+| 2026-10-18 | Claude Opus 5.5 | 30 | 26 | 0.98 | [Run 1](published/2026-10-18-claude-opus-5-5-run1.md), skill v1.0.1 |
+| 2026-10-18 | Claude Opus 5.5 | 4 (the 4 failures) | 4 | 1.00 | [Run 2](published/2026-10-18-claude-opus-5-5-run2-fixes.md), after the fixes below |
+
+How these runs were made: each answer came from a separate Claude agent given the exact system prompt and user message that `run_evals.py` builds (SKILL.md plus the mode's references). A different agent graded it with the runner's `JUDGE_SYSTEM` rubric. The same model family answered and judged, so treat the scores as indicative, not proof. Runs against other models and tools (OpenAI, Gemini, Cursor, Lovable) are welcome: see "Evaluating other tools" above.
+
+What run 1 found and what changed:
+
+| Case | Failed item | Fix |
+|---|---|---|
+| build-whatsapp-broadcast | n8n Cloud not named as an operator and cross-border transfer | SKILL.md rule 10 and stack playbook section 7 now name hosted automation tools as operators and usually s72 transfers |
+| explain-hr-criminal-checks | Did not recommend getting the applicant's consent | Legal map now covers employment screening: role-justified checks, notice, consent under s27(1)(a), vendor authorisation under s57(1)(b) |
+| explain-popia-fines | Stated a wrong section number for failing to comply with an enforcement notice | Legal map now names s103(1) and s103(2) and says to quote section numbers only from that list |
+| explain-us-cloud-hosting | Listed only three of the five s72(1) grounds | Explain mode now says to give the whole list when the Act lists grounds |
+
+These content changes are `pending legal review`.
+
 ## Current coverage
 
 30 cases: build 14, explain 5, docs 4, breach 3, refuse 3, audit 1. Topics include direct marketing (newsletter, WhatsApp, cold B2B, purchased lists, pre-ticked boxes), Supabase RLS, trackers and cookie banners, SA ID minimisation, AI chatbots and fine-tuning, automated credit decisions, biometrics, children, cross-border hosting, three breach scenarios, data subject rights (access, deletion, objection), privacy notice drafting, a repo audit, fines, uncertainty handling, backdated consent, and sector packs (short-term rentals, fintech, education, HR).
