@@ -18,7 +18,9 @@ PyPI and npm use trusted publishing. GitHub proves which workflow is publishing,
 
 The first release creates the project.
 
-### npm
+### npm (off by default)
+
+The npm job only runs when the repository variable `PUBLISH_NPM` is `true` (Settings, Secrets and variables, Actions, Variables). Until then, releases go to PyPI and GitHub only.
 
 npm can only add a trusted publisher to a package that already exists. The first release uses a token, then you switch.
 

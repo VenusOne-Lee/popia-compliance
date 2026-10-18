@@ -6,6 +6,8 @@ Legal content merged without a legal reviewer is marked `pending legal review` (
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-18
+
 ### Added
 - Release workflow: a version tag publishes to PyPI and npm with trusted publishing and npm provenance, then creates a GitHub release. Setup in docs/releasing.md.
 - One-line install, no clone needed: `uvx --from git+https://github.com/VenusOne-Lee/popia-compliance popia-kit scan .`, the `pipx run` equivalent, or `npx -y github:VenusOne-Lee/popia-compliance scan .`. One `popia-kit` command with `scan`, `site-check`, `pack`, `badge`, `id` and `mcp`. Packaging files: `pyproject.toml` (package `popia-kit`) and `package.json`. CI installs the package into a clean environment and runs every command.
