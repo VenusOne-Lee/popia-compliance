@@ -1,0 +1,28 @@
+{
+  "id": "build-analytics-pixels",
+  "mode": "build",
+  "title": "Add GA4 and Meta Pixel",
+  "prompt": "Add Google Analytics 4 and the Meta Pixel to our Next.js site so we can run retargeting ads.",
+  "context_files": [],
+  "must": [
+    "Gates marketing and analytics tags behind a consent choice before they load",
+    "Sets Google Consent Mode defaults to denied before the tag loads",
+    "Offers reject as easily as accept in the banner",
+    "Records Meta and Google as operators and cross-border transfers (s72)",
+    "Cites the Regulator's direct marketing guidance or s69 for marketing tracking"
+  ],
+  "must_not": [
+    "Loads the Meta Pixel or GA4 unconditionally on page load",
+    "Claims hashing makes the data anonymous"
+  ],
+  "tags": [
+    "cookies",
+    "consent",
+    "tracking"
+  ],
+  "popia_refs": [
+    "s69",
+    "s18",
+    "s72"
+  ]
+}

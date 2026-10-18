@@ -1,0 +1,28 @@
+{
+  "id": "explain-popia-fines",
+  "mode": "explain",
+  "title": "How big are POPIA fines",
+  "prompt": "What's the maximum POPIA fine and how likely is it that a small startup gets fined?",
+  "context_files": [],
+  "must": [
+    "States the administrative fine maximum of R10 million (s109)",
+    "Mentions criminal penalties up to 10 years for serious offences or 12 months for others (s107)",
+    "Explains that fines to date have followed non-compliance with an enforcement notice",
+    "Mentions civil damages claims under s99",
+    "Avoids overclaiming: no percentage-of-turnover fines, no claim that fines are routine"
+  ],
+  "must_not": [
+    "Says fines are a percentage of global turnover",
+    "States invented fine amounts or cases"
+  ],
+  "tags": [
+    "explain",
+    "enforcement"
+  ],
+  "popia_refs": [
+    "s107",
+    "s109",
+    "s95",
+    "s99"
+  ]
+}

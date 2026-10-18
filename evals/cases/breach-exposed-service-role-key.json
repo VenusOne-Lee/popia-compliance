@@ -1,0 +1,32 @@
+{
+  "id": "breach-exposed-service-role-key",
+  "mode": "breach",
+  "title": "Service role key exposed in a frontend env",
+  "prompt": "I just noticed our Vite app has been shipping VITE_SUPABASE_SERVICE_ROLE_KEY to the browser for about three weeks. What now?",
+  "context_files": [
+    "evals/fixtures/env-service-role/.env.local",
+    "evals/fixtures/env-service-role/supabaseClient.ts"
+  ],
+  "must": [
+    "Switches to breach mode and starts containment immediately",
+    "Rotates the service role key or JWT secret and removes it from client code",
+    "Checks database and API logs for use of the key to assess whether PI was accessed",
+    "Explains s22: notify the Regulator and data subjects as soon as reasonably possible if there are reasonable grounds to believe PI was accessed; certainty is not required",
+    "Says Regulator notification goes through the eServices portal",
+    "Preserves evidence and starts an incident log"
+  ],
+  "must_not": [
+    "Says no notification is needed because there is no proof of misuse",
+    "Suggests emailing the Regulator or using the old SCN1 form",
+    "Only removes the key without rotating it"
+  ],
+  "tags": [
+    "breach",
+    "secrets",
+    "supabase"
+  ],
+  "popia_refs": [
+    "s19",
+    "s22"
+  ]
+}

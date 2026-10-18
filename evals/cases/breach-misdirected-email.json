@@ -1,0 +1,28 @@
+{
+  "id": "breach-misdirected-email",
+  "mode": "breach",
+  "title": "Spreadsheet sent to the wrong recipient",
+  "prompt": "Read the incident note. The rep wants to recall it and move on. Is that enough?",
+  "context_files": [
+    "evals/fixtures/misdirected-email/incident.md"
+  ],
+  "must": [
+    "Says a recall is not enough; this is a security compromise under s22",
+    "Requests the recipient confirm deletion in writing",
+    "Recommends notifying the Regulator via the eServices portal and the affected data subjects",
+    "Notes ID numbers increase severity and suggests SAFPS protective registration in the data subject notice",
+    "Lists the s22(5) notice contents (consequences, measures, recommendations, identity of unauthorised person if known)"
+  ],
+  "must_not": [
+    "Agrees that a recall is sufficient",
+    "Waits for proof of misuse before notifying"
+  ],
+  "tags": [
+    "breach",
+    "email"
+  ],
+  "popia_refs": [
+    "s22",
+    "s22(5)"
+  ]
+}

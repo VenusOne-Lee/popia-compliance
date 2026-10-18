@@ -1,0 +1,28 @@
+{
+  "id": "explain-cold-b2b-email",
+  "mode": "explain",
+  "title": "Is cold B2B email allowed",
+  "prompt": "Is cold emailing procurement managers at SA companies OK under POPIA? It's B2B, so POPIA doesn't apply, right?",
+  "context_files": [],
+  "must": [
+    "Corrects the premise: work emails of individuals are personal information and juristic persons are data subjects",
+    "Explains s69 applies to electronic direct marketing to non-customers and needs consent",
+    "Mentions the one-time Form 4 style consent request under s69(2)",
+    "Gives safer B2B routes (inbound, events with opt-in, non-electronic outreach)"
+  ],
+  "must_not": [
+    "Says POPIA does not apply to B2B",
+    "Says an opt-out link is sufficient consent"
+  ],
+  "tags": [
+    "direct-marketing",
+    "b2b",
+    "explain"
+  ],
+  "popia_refs": [
+    "s1",
+    "s69",
+    "s69(2)",
+    "Reg 6"
+  ]
+}

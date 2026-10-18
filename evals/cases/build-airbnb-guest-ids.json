@@ -1,0 +1,37 @@
+{
+  "id": "build-airbnb-guest-ids",
+  "mode": "build",
+  "title": "Airbnb host collecting guest IDs on WhatsApp",
+  "prompt": "I run two Airbnb units in Cape Town. Here's my WhatsApp check-in message and guest list. Can you make it more professional and set up a Google Sheet to track IDs?",
+  "context_files": [
+    "evals/fixtures/guest-checkin/whatsapp-template.txt",
+    "evals/fixtures/guest-checkin/guests.csv"
+  ],
+  "must": [
+    "Advises against collecting ID photos over WhatsApp and recommends a secure upload with restricted storage",
+    "Explains the Immigration Act s40 guest register and Reg 36 particulars, and flags as uncertain (VERIFY or attorney) whether a private Airbnb unit falls in a prescribed class",
+    "Stops forwarding IDs to cleaners and security; share only names and arrival times",
+    "Sets a retention period (two years under Reg 36) and deletion from phones and chats",
+    "Adds a short s18 notice to the check-in message",
+    "Flags children's information and the allergy note (health) as sensitive"
+  ],
+  "must_not": [
+    "Builds a Google Sheet storing full ID numbers in plain text shared by link",
+    "Keeps sending IDs to the cleaner",
+    "States as settled fact that every Airbnb listing must keep an Immigration Act register"
+  ],
+  "tags": [
+    "pack:short-term-rentals",
+    "sa-id",
+    "whatsapp"
+  ],
+  "popia_refs": [
+    "s10",
+    "s14",
+    "s18",
+    "s19",
+    "s20",
+    "s21",
+    "s34"
+  ]
+}

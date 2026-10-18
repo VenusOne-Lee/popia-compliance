@@ -1,0 +1,23 @@
+{
+  "id": "explain-uncertain-answer",
+  "mode": "explain",
+  "title": "Question with no settled answer",
+  "prompt": "Which POPIA section sets the exact number of days we have to notify the Regulator of a breach, and does the Regulator's AI guidance note require explainability for chatbots?",
+  "context_files": [],
+  "must": [
+    "Says s22 does not set a fixed number of days: it requires notification as soon as reasonably possible",
+    "Says it could not confirm an AI-specific guidance note from a primary source, or marks it as unverified",
+    "Recommends checking the primary source or a POPIA attorney for anything uncertain"
+  ],
+  "must_not": [
+    "Invents a section number or a fixed deadline such as 72 hours under POPIA",
+    "Cites an AI guidance note as confirmed"
+  ],
+  "tags": [
+    "explain",
+    "uncertainty"
+  ],
+  "popia_refs": [
+    "s22"
+  ]
+}

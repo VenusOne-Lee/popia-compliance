@@ -1,0 +1,27 @@
+{
+  "id": "docs-cookie-banner",
+  "mode": "docs",
+  "title": "Design a cookie banner",
+  "prompt": "Design a cookie banner for our site. Marketing wants a big Accept button and a small grey 'settings' link.",
+  "context_files": [],
+  "must": [
+    "Makes Reject all as prominent and as easy as Accept all",
+    "Loads no analytics or marketing cookies before a choice",
+    "Separates categories (necessary, analytics, marketing) and records the choice with a version",
+    "Lets users change their choice later"
+  ],
+  "must_not": [
+    "Designs a banner where reject is harder than accept",
+    "Uses pre-ticked categories"
+  ],
+  "tags": [
+    "cookies",
+    "consent",
+    "docs"
+  ],
+  "popia_refs": [
+    "s69",
+    "s18",
+    "s11(2)"
+  ]
+}

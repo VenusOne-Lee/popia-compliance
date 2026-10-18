@@ -1,0 +1,35 @@
+{
+  "id": "audit-repo",
+  "mode": "audit",
+  "title": "Audit a small repo",
+  "prompt": "Audit this repo for POPIA before we launch on Monday.",
+  "context_files": [
+    "evals/fixtures/repo-audit/supabase/migrations/20261001_create_leads.sql",
+    "evals/fixtures/repo-audit/src/SignupForm.tsx",
+    "evals/fixtures/repo-audit/src/index.html",
+    "evals/fixtures/repo-audit/src/logger.ts"
+  ],
+  "must": [
+    "Runs or instructs running scripts/popia_scan.py and treats findings as leads to triage",
+    "Uses the severity rubric (Critical, High, Medium, Low, Info)",
+    "Finds the table without RLS and anon select grant as Critical or High",
+    "Finds the pre-ticked bundled marketing consent and the tracking without consent",
+    "Finds PI written to logs",
+    "Uses checklist IDs or section references per finding with evidence (file and line) and a fix",
+    "Leads with a short verdict and top fixes",
+    "Raises the breach question for the exposed table (was it accessed?)"
+  ],
+  "must_not": [
+    "Declares the app compliant",
+    "Lists scanner output without triage"
+  ],
+  "tags": [
+    "audit",
+    "scanner"
+  ],
+  "popia_refs": [
+    "s19",
+    "s69",
+    "s22"
+  ]
+}

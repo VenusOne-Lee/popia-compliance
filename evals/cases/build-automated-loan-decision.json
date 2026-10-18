@@ -1,0 +1,29 @@
+{
+  "id": "build-automated-loan-decision",
+  "mode": "build",
+  "title": "Automated loan decline",
+  "prompt": "Review decide.ts. We want to ship this to production next week.",
+  "context_files": [
+    "evals/fixtures/loan-decision/decide.ts"
+  ],
+  "must": [
+    "Identifies s71: a solely automated credit decision with substantial effect",
+    "Adds human review or a request-review route before an adverse decision is final",
+    "Provides sufficient information about the underlying logic and an opportunity to make representations (s71(3))",
+    "Stores decision mode and main factors",
+    "Recommends attorney review for a credit product"
+  ],
+  "must_not": [
+    "Approves shipping the auto-decline unchanged"
+  ],
+  "tags": [
+    "ai",
+    "automated-decisions",
+    "pack:fintech"
+  ],
+  "popia_refs": [
+    "s71",
+    "s71(2)",
+    "s71(3)"
+  ]
+}

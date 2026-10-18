@@ -1,0 +1,5 @@
+# FAKE EVAL FIXTURE. Synthetic people and synthetic SA IDs from scripts/sa_id.py fake.
+booking_ref,full_name,id_number,phone,stay_start,notes
+BK-0001,Test Guest Alpha,8006227148003,+27 00 000 0001,2024-12-12,nut allergy
+BK-0002,Test Guest Bravo,7112112389008,+27 00 000 0002,2023-04-02,
+BK-0003,Test Guest Charlie,8109103011004,+27 00 000 0003,2022-01-15,travelling with two children

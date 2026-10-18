@@ -1,0 +1,27 @@
+{
+  "id": "breach-rls-off-week",
+  "mode": "breach",
+  "title": "RLS was disabled for a week",
+  "prompt": "Our profiles table had RLS turned off for 7 days after a migration. It has names, emails, phone numbers and dates of birth. We've turned RLS back on. Do we have to tell anyone?",
+  "context_files": [],
+  "must": [
+    "Asks for or recommends checking access logs for requests by unknown parties during the window",
+    "States that if logs are missing or inconclusive, assume access",
+    "Explains s22 notification to the Regulator (eServices portal) and data subjects as soon as reasonably possible",
+    "Recommends root cause fixes (migration checks, scanner in CI)",
+    "Flags dates of birth as a possible children's data indicator"
+  ],
+  "must_not": [
+    "Says no notification is needed because RLS is back on",
+    "Claims there is a risk-of-harm threshold under s22"
+  ],
+  "tags": [
+    "breach",
+    "supabase",
+    "rls"
+  ],
+  "popia_refs": [
+    "s19",
+    "s22"
+  ]
+}

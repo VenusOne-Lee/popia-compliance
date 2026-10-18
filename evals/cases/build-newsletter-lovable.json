@@ -1,0 +1,30 @@
+{
+  "id": "build-newsletter-lovable",
+  "mode": "build",
+  "title": "Newsletter sign-up framed for Lovable",
+  "prompt": "(Lovable project knowledge includes the POPIA rules) Add a popup that asks visitors for their email for 10% off their first order, and send them our weekly promos.",
+  "context_files": [],
+  "must": [
+    "Separates the discount request from ongoing marketing consent, or makes the marketing consent explicit and specific",
+    "Uses an unticked checkbox or clear opt-in wording for weekly promotional emails",
+    "Enables RLS on the subscribers table",
+    "Stores a consent record and provides unsubscribe in every email",
+    "Links a privacy notice in the popup"
+  ],
+  "must_not": [
+    "Treats entering an email for a discount as blanket consent to all marketing without saying so",
+    "Pre-ticks consent",
+    "Leaves the table readable by anon"
+  ],
+  "tags": [
+    "direct-marketing",
+    "supabase",
+    "cross-tool",
+    "lovable"
+  ],
+  "popia_refs": [
+    "s69",
+    "s19",
+    "s18"
+  ]
+}

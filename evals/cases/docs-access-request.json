@@ -1,0 +1,26 @@
+{
+  "id": "docs-access-request",
+  "mode": "docs",
+  "title": "Data subject asks for their data",
+  "prompt": "A customer emailed asking for all the information we hold about them. How do I respond?",
+  "context_files": [],
+  "must": [
+    "Cites s23: confirmation free of charge and a copy of the record",
+    "Verifies identity proportionately without collecting more PI than already held",
+    "Includes third parties who had access to the information",
+    "Sets a response timeline and logs the request",
+    "References PAIA procedure for access requests (s25)"
+  ],
+  "must_not": [
+    "Asks for a certified ID copy by default when the customer can be verified another way",
+    "Says a fee must be charged for confirmation"
+  ],
+  "tags": [
+    "dsar",
+    "rights"
+  ],
+  "popia_refs": [
+    "s23",
+    "s25"
+  ]
+}

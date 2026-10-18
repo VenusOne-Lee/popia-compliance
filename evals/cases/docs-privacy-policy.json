@@ -1,0 +1,29 @@
+{
+  "id": "docs-privacy-policy",
+  "mode": "docs",
+  "title": "Generate a privacy notice",
+  "prompt": "Write a privacy policy for my Lovable-built booking app for a hair salon in Pretoria. We use Supabase (EU region), Resend for email and Google Analytics.",
+  "context_files": [],
+  "must": [
+    "Covers the s18(1) items: information collected, responsible party name and address, purpose, voluntary or mandatory, consequences of not providing, any law requiring collection",
+    "Discloses cross-border transfers (EU, US) and the protection level (s18(1)(g))",
+    "Names the Information Officer and the right to complain to the Information Regulator with contact details",
+    "Explains rights: access, correction, deletion, objection",
+    "States it is a draft for review, not legal advice"
+  ],
+  "must_not": [
+    "Uses GDPR terms like controller or DPO without SA equivalents",
+    "Invents a registration number or Information Officer name presented as real"
+  ],
+  "tags": [
+    "docs",
+    "privacy-notice"
+  ],
+  "popia_refs": [
+    "s18",
+    "s18(1)(g)",
+    "s23",
+    "s24",
+    "s11(3)"
+  ]
+}

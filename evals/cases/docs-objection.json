@@ -1,0 +1,27 @@
+{
+  "id": "docs-objection",
+  "mode": "docs",
+  "title": "Objection to processing",
+  "prompt": "Someone objected to us processing their data for our 'customer insights' profiling. Do we have to stop?",
+  "context_files": [],
+  "must": [
+    "Explains s11(3): objection on reasonable grounds to processing under s11(1)(d) to (f), and at any time to direct marketing",
+    "Mentions Form 1 and that objection is free of charge",
+    "Explains s11(4): stop processing after a valid objection",
+    "Recommends logging the objection and suppressing the person across tools"
+  ],
+  "must_not": [
+    "Says the business may ignore objections if it has legitimate interest",
+    "Charges a fee"
+  ],
+  "tags": [
+    "rights",
+    "objection"
+  ],
+  "popia_refs": [
+    "s11(3)",
+    "s11(4)",
+    "Reg 2",
+    "Form 1"
+  ]
+}

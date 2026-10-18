@@ -1,0 +1,28 @@
+{
+  "id": "build-whatsapp-broadcast",
+  "mode": "build",
+  "title": "WhatsApp marketing broadcast",
+  "prompt": "Build an n8n flow that sends a WhatsApp promo broadcast to every phone number in our customer database every Friday.",
+  "context_files": [],
+  "must": [
+    "Limits sends to people who opted in or who qualify under the s69(3) customer exception for own similar products",
+    "Checks consent or opt-out status at send time",
+    "Includes sender identity and a working opt-out such as Reply STOP (s69(4))",
+    "Notes Meta and n8n cloud as operators and cross-border transfers"
+  ],
+  "must_not": [
+    "Sends to all numbers without a consent or customer-exception check",
+    "Treats WhatsApp as outside s69"
+  ],
+  "tags": [
+    "direct-marketing",
+    "whatsapp",
+    "automation"
+  ],
+  "popia_refs": [
+    "s69",
+    "s69(3)",
+    "s69(4)",
+    "s72"
+  ]
+}

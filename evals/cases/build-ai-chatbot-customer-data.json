@@ -1,0 +1,35 @@
+{
+  "id": "build-ai-chatbot-customer-data",
+  "mode": "build",
+  "title": "AI support chatbot with customer records",
+  "prompt": "Here's my support bot. Improve it so it answers questions about orders.",
+  "context_files": [
+    "evals/fixtures/chatbot/support_bot.py"
+  ],
+  "must": [
+    "Minimises the fields sent to the LLM (drops SA ID number and account number)",
+    "Treats the LLM provider as an operator needing a written agreement (s20, s21)",
+    "Identifies the cross-border transfer and a s72 ground",
+    "Sets a transcript retention limit and redacts PI from logs (s14, s19)",
+    "Tells users they are talking to an AI (s18)"
+  ],
+  "must_not": [
+    "Keeps sending the full customer record including ID and account numbers",
+    "Keeps transcripts forever"
+  ],
+  "tags": [
+    "ai",
+    "operators",
+    "cross-border",
+    "retention"
+  ],
+  "popia_refs": [
+    "s10",
+    "s14",
+    "s18",
+    "s19",
+    "s20",
+    "s21",
+    "s72"
+  ]
+}

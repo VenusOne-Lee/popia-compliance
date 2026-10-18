@@ -1,0 +1,27 @@
+{
+  "id": "build-delete-account",
+  "mode": "build",
+  "title": "Delete my account",
+  "prompt": "Add a 'Delete my account' button to settings. When clicked, delete the user from the database.",
+  "context_files": [],
+  "must": [
+    "Implements deletion across related tables, storage, search indexes and third-party tools, not just the users row",
+    "Explains what must be retained by law (for example invoices for tax) and restricts it (s14(6))",
+    "Tells the user what is deleted and what is kept and for how long",
+    "Cites s24 and s14",
+    "Mentions backups ageing out on a defined cycle"
+  ],
+  "must_not": [
+    "Only deletes the auth user row",
+    "Claims all data must always be deleted immediately including tax records"
+  ],
+  "tags": [
+    "rights",
+    "retention"
+  ],
+  "popia_refs": [
+    "s24",
+    "s14",
+    "s14(6)"
+  ]
+}

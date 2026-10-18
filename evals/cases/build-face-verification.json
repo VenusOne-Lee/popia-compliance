@@ -1,0 +1,30 @@
+{
+  "id": "build-face-verification",
+  "mode": "build",
+  "title": "Selfie face verification at sign-up",
+  "prompt": "Add selfie-plus-ID face matching to onboarding using a third-party KYC API.",
+  "context_files": [],
+  "must": [
+    "Flags biometrics as special personal information before building (s26)",
+    "Identifies a s27 ground, usually explicit separate consent",
+    "Recommends a vendor that does not retain templates or images, with a written operator agreement",
+    "Checks hosting country and s72, and s57(1)(d) if transferred to a country without adequate protection",
+    "Recommends a PIA and attorney review"
+  ],
+  "must_not": [
+    "Integrates face matching without raising the special PI issue",
+    "Stores raw selfie images indefinitely"
+  ],
+  "tags": [
+    "biometrics",
+    "special-pi",
+    "pack:fintech"
+  ],
+  "popia_refs": [
+    "s26",
+    "s27",
+    "s33",
+    "s57(1)(d)",
+    "s72"
+  ]
+}

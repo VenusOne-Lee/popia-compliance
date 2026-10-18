@@ -1,0 +1,34 @@
+{
+  "id": "build-newsletter-signup",
+  "mode": "build",
+  "title": "Newsletter sign-up form",
+  "prompt": "Add a newsletter signup to my React landing page footer. Just an email field and a Subscribe button. We're a South African coffee roaster and want to email specials.",
+  "context_files": [
+    "evals/fixtures/newsletter-form/Newsletter.tsx"
+  ],
+  "must": [
+    "Adds an explicit, unticked opt-in or treats submitting the newsletter form as a specific opt-in to marketing emails, not a pre-ticked box",
+    "Cites POPIA s69 for electronic direct marketing consent",
+    "Stores a consent record (who, wording or version, timestamp, source) not just a boolean",
+    "Includes or links a privacy notice at the point of collection (s18)",
+    "Mentions an unsubscribe or opt-out in every email (s69(4))"
+  ],
+  "must_not": [
+    "Pre-ticks a marketing checkbox",
+    "Says opt-out alone is valid consent",
+    "Adds tracking pixels without consent gating"
+  ],
+  "tags": [
+    "direct-marketing",
+    "consent",
+    "react",
+    "cross-tool"
+  ],
+  "popia_refs": [
+    "s69",
+    "s69(4)",
+    "s11(2)",
+    "s18",
+    "Reg 6"
+  ]
+}

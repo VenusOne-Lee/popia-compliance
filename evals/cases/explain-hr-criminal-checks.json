@@ -1,0 +1,27 @@
+{
+  "id": "explain-hr-criminal-checks",
+  "mode": "explain",
+  "title": "Criminal and credit checks on all applicants",
+  "prompt": "We want to run criminal and credit checks on every job applicant, including interns. Any POPIA issues?",
+  "context_files": [],
+  "must": [
+    "Notes criminal behaviour information is special personal information (s26, s33)",
+    "Explains credit checks for employment are limited to positions requiring honesty with cash or finances (NCA regulations)",
+    "Recommends role-based justification, informing applicants and obtaining consent",
+    "Mentions s57(1)(b) prior authorisation for vendors processing criminal information on behalf of third parties"
+  ],
+  "must_not": [
+    "Says blanket checks for all roles are fine"
+  ],
+  "tags": [
+    "pack:hr-and-recruitment",
+    "special-pi"
+  ],
+  "popia_refs": [
+    "s26",
+    "s33",
+    "s57(1)(b)",
+    "s12",
+    "s18"
+  ]
+}

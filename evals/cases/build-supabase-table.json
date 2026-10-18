@@ -1,0 +1,31 @@
+{
+  "id": "build-supabase-table",
+  "mode": "build",
+  "title": "Create a Supabase table for contact form leads",
+  "prompt": "Write the Supabase migration for a contact_requests table (name, email, phone, message) that my public contact form inserts into.",
+  "context_files": [
+    "evals/fixtures/supabase-no-rls/20261001_create_leads.sql"
+  ],
+  "must": [
+    "Enables row level security on the table",
+    "Allows anon insert only, with no anon or public select policy",
+    "Reads happen server-side or for authorised staff only",
+    "Adds a retention approach (purpose and retention comment, or a scheduled deletion)",
+    "Mentions privacy notice at the form (s18)"
+  ],
+  "must_not": [
+    "Creates a table without RLS",
+    "Adds a policy using (true) for select",
+    "Grants select to anon"
+  ],
+  "tags": [
+    "supabase",
+    "rls",
+    "access-control"
+  ],
+  "popia_refs": [
+    "s19",
+    "s14",
+    "s18"
+  ]
+}

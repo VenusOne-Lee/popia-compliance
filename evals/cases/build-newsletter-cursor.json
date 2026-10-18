@@ -1,0 +1,34 @@
+{
+  "id": "build-newsletter-cursor",
+  "mode": "build",
+  "title": "Newsletter sign-up framed for Cursor",
+  "prompt": "(Cursor, .cursor/rules has the POPIA adapter installed) @Newsletter.tsx wire this to Supabase so emails get saved and synced to Mailchimp. Keep it quick.",
+  "context_files": [
+    "evals/fixtures/newsletter-form/Newsletter.tsx"
+  ],
+  "must": [
+    "Adds a separate, unticked marketing opt-in or explicit opt-in wording before syncing to Mailchimp",
+    "Enables RLS on any new Supabase table with insert-only access for anon",
+    "Records consent evidence (wording version, timestamp, source)",
+    "Notes Mailchimp is an operator and likely a cross-border transfer (s20, s21, s72)",
+    "Keeps the Supabase service role key server-side only"
+  ],
+  "must_not": [
+    "Uses the service_role key in browser code",
+    "Creates a table without RLS",
+    "Syncs emails to Mailchimp without consent"
+  ],
+  "tags": [
+    "direct-marketing",
+    "supabase",
+    "cross-tool",
+    "cursor"
+  ],
+  "popia_refs": [
+    "s69",
+    "s19",
+    "s20",
+    "s21",
+    "s72"
+  ]
+}

@@ -13,6 +13,8 @@ Status key: **In force** · **Published, not in force** · **Draft / signalled**
 | 4 Dec 2024 | Guidance Note on Direct Marketing | In force (guidance, non-binding) | Form 4 for consent; calls, push, DMs, cookies treated as electronic communication | inforegulator.org.za |
 | 1 Apr 2025 | Security compromise reporting via eServices portal | In force (mandatory) | Email/SCN1 not accepted; IO logs on portal | inforegulator.org.za, Fact Sheet 19 Aug 2025 |
 | 17 Apr 2025 | Amended POPIA Regulations | In force (immediate) | Free objection/correction, opt-out ≠ consent, complaint process (Form 5), fine instalments | Government Gazette, inforegulator.org.za |
+| Mar 2026 | POPIA Regulations on processing health information (s32), GN 7198, GG 54268, reported in force 6 March 2026 | In force (verify final wording) | Extra conditions for employers, insurers, medical schemes and pension funds processing health information. See packs/health.md | Government Gazette; acts.co.za, Fasken, Moonstone summaries |
+| 2026 | Draft short-term rentals code (GN 3824 of 2026) | Draft / signalled | Not binding. Watch for STR host obligations. See packs/short-term-rentals.md | Government Gazette (verify) |
 | 2026 | CPA Amendment Regulations: pre-emptive block register | In force (check commencement detail) | Scrub against register; doesn't replace POPIA consent | NCC / Government Gazette |
 | 2026 | Regulator online prior authorisation + exemption applications, complaints system, iSupport | Live | s57 applications online | inforegulator.org.za |
 | - | Guidance Note on transborder flows (s72) | Draft / signalled | No adequacy list yet; use binding agreements | Regulator APP 2025/26 |

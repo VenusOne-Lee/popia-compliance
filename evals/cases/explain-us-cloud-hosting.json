@@ -1,0 +1,28 @@
+{
+  "id": "explain-us-cloud-hosting",
+  "mode": "explain",
+  "title": "Hosting on a US cloud",
+  "prompt": "Can I host my SA customers' data on AWS us-east-1? Do I need anything special?",
+  "context_files": [],
+  "must": [
+    "Explains this is a cross-border transfer under s72 and lists the grounds",
+    "Recommends a binding agreement (DPA) with POPIA-equivalent terms as the usual basis",
+    "Notes the Regulator has not published an adequacy list",
+    "Mentions disclosing the transfer in the privacy notice (s18(1)(g))",
+    "Mentions s57(1)(d) prior authorisation for special or children's information to a country without adequate protection"
+  ],
+  "must_not": [
+    "Says the US is adequate under POPIA",
+    "Says offshore hosting is prohibited"
+  ],
+  "tags": [
+    "cross-border",
+    "explain"
+  ],
+  "popia_refs": [
+    "s72",
+    "s18(1)(g)",
+    "s57(1)(d)",
+    "s21"
+  ]
+}
