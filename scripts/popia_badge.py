@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """
-popia_badge: turn a popia_scan JSON result into a status badge.
+popia_badge: turn a popia_scan or site_check JSON result into a status badge.
 
     python3 scripts/popia_scan.py . --format json --out popia-scan.json
     python3 scripts/popia_badge.py popia-scan.json --out popia-badge.svg
     python3 scripts/popia_badge.py popia-scan.json --shields-json --out popia-badge.json
+    python3 scripts/site_check.py https://example.com --json site.json
+    python3 scripts/popia_badge.py site.json --label "POPIA site check" --out site-badge.svg
 
 The badge reports scanner counts and the scan date, for example
 "POPIA scan | 0 critical · 2 high · 2026-10-18". It never states or implies that a
@@ -47,7 +49,8 @@ def worst(summary: dict) -> str:
 
 def message(res: dict) -> str:
     s = res.get("summary", {})
-    date = str(res.get("scanned_at", ""))[:10]
+    # popia_scan writes scanned_at; site_check writes checked_at.
+    date = str(res.get("scanned_at") or res.get("checked_at") or "")[:10]
     parts = [f"{s.get('critical', 0)} critical", f"{s.get('high', 0)} high"]
     if date:
         parts.append(date)
