@@ -1,4 +1,11 @@
 {
   "//": "Only for type checking the Node adapters with Deno (deno task check:adapters at the repo root).",
-  "nodeModulesDir": "manual"
+  "nodeModulesDir": "manual",
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noImplicitOverride": true
+  }
 }

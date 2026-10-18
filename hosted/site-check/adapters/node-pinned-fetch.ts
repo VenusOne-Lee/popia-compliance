@@ -41,7 +41,7 @@ export function guardedLookup(base: LookupFn = systemLookup) {
         return cb(Object.assign(new Error("address not allowed"), { code: "EADDRNOTALLOWED" }), []);
       }
       if (opts.all) return cb(null, list);
-      cb(null, list[0].address, list[0].family);
+      cb(null, list[0]!.address, list[0]!.family);
     });
   };
 }

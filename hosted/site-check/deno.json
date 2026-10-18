@@ -1,4 +1,11 @@
 {
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noImplicitOverride": true
+  },
   "tasks": {
     "test": "SITE_CHECK_DISABLE_SERVE=1 deno test --allow-env tests/",
     "test:sql": "bash tests/sql/run_sql_tests.sh",

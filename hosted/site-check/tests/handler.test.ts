@@ -79,8 +79,8 @@ async function call(s: ReturnType<typeof setup>, req: Request) {
 
 const isError = (b: Record<string, unknown>, type: string) => {
   assertEquals(Object.keys(b), ["error", "type"]);
-  assertEquals(b.type, type);
-  assertEquals(b.error, ERROR_MESSAGES[type]);
+  assertEquals(b["type"], type);
+  assertEquals(b["error"], ERROR_MESSAGES[type]);
 };
 
 // ---------------------------------------------------------------- CORS and method
@@ -89,7 +89,7 @@ Deno.test("cors: missing, unknown and lookalike origins are refused with 403", a
   for (const origin of [null, "https://evil.example", "https://check.venusone.co.za.evil.example", "null", ORIGIN + "/"]) {
     const s = setup();
     const headers: Record<string, string> = { "content-type": "application/json" };
-    if (origin) headers.origin = origin;
+    if (origin) headers["origin"] = origin;
     const { res, body } = await call(s, new Request("https://x.supabase.co/f", { method: "POST", headers, body: "{}" }));
     assertEquals(res.status, 403, String(origin));
     isError(body, "origin_not_allowed");
@@ -210,16 +210,16 @@ Deno.test("rate limit: refused, backend error and missing salt all give 429", as
 Deno.test("rate limit: salted hash of the client IP, default and custom limits", async () => {
   const s = setup();
   await call(s, post({ url: "https://example.co.za/" }));
-  assertEquals(s.hits[0].limit, 10);
-  assertEquals(s.hits[0].hash, await hashIp("v4:41.1.2.3", "test-salt"));
-  assert(/^[0-9a-f]{64}$/.test(s.hits[0].hash));
-  assert(!s.hits[0].hash.includes("41.1.2.3"));
+  assertEquals(s.hits[0]!.limit, 10);
+  assertEquals(s.hits[0]!.hash, await hashIp("v4:41.1.2.3", "test-salt"));
+  assert(/^[0-9a-f]{64}$/.test(s.hits[0]!.hash));
+  assert(!s.hits[0]!.hash.includes("41.1.2.3"));
   const s2 = setup({ env: { RATE_LIMIT_PER_HOUR: "3" } });
   await call(s2, post({ url: "https://example.co.za/" }));
-  assertEquals(s2.hits[0].limit, 3);
+  assertEquals(s2.hits[0]!.limit, 3);
   const s3 = setup({ env: { RATE_LIMIT_PER_HOUR: "-5" } });
   await call(s3, post({ url: "https://example.co.za/" }));
-  assertEquals(s3.hits[0].limit, 10);
+  assertEquals(s3.hits[0]!.limit, 10);
   assert((await hashIp("v4:41.1.2.3", "a")) !== (await hashIp("v4:41.1.2.3", "b")), "salt matters");
 });
 Deno.test("rate limit: rate limiting happens before URL validation", async () => {
@@ -253,9 +253,9 @@ Deno.test({
         ({ SUPABASE_URL: "https://proj.supabase.co", SUPABASE_SERVICE_ROLE_KEY: "srk" } as Record<string, string>)[k];
       const sig = new AbortController().signal;
       assertEquals(await supabaseRateLimit("a".repeat(64), 7, sig, env), true);
-      assertEquals(seen[0].url, "https://proj.supabase.co/rest/v1/rpc/site_check_hit");
-      assertEquals(JSON.parse(seen[0].body), { p_ip_hash: "a".repeat(64), p_limit: 7 });
-      assertEquals(seen[0].auth, "Bearer srk");
+      assertEquals(seen[0]!.url, "https://proj.supabase.co/rest/v1/rpc/site_check_hit");
+      assertEquals(JSON.parse(seen[0]!.body), { p_ip_hash: "a".repeat(64), p_limit: 7 });
+      assertEquals(seen[0]!.auth, "Bearer srk");
       reply = () => new Response("false", { headers: { "content-type": "application/json" } });
       assertEquals(await supabaseRateLimit("a".repeat(64), 7, sig, env), false);
       reply = () =>
@@ -332,10 +332,10 @@ Deno.test("success: response shape, headers and a clean site", async () => {
   assertEquals(res.headers.get("cache-control"), "no-store");
   assertEquals(res.headers.get("content-type"), "application/json; charset=utf-8");
   assertEquals(Object.keys(body), ["url", "final_url", "checked_at", "summary", "findings", "cookies", "notices", "disclaimer"]);
-  assertEquals(body.url, "https://example.co.za/");
-  assertEquals(body.checked_at, "2026-10-18T09:00:00+00:00");
-  assertEquals(body.disclaimer, DISCLAIMER);
-  const got = (body.findings as Array<{ rule_id: string }>).map((f) => f.rule_id);
+  assertEquals(body["url"], "https://example.co.za/");
+  assertEquals(body["checked_at"], "2026-10-18T09:00:00+00:00");
+  assertEquals(body["disclaimer"], DISCLAIMER);
+  const got = (body["findings"] as Array<{ rule_id: string }>).map((f) => f.rule_id);
   assert(
     !got.includes("WEB-002") && !got.includes("WEB-003") && !got.includes("WEB-018") && !got.includes("WEB-015"),
     got.join(),
@@ -352,11 +352,11 @@ Deno.test("notice probes: off by default, on with PROBE_NOTICE_PATHS", async () 
   };
   const off = setup({ routes });
   const r1 = await call(off, post({ url: "https://example.co.za/" }));
-  assertEquals(r1.body.notices, { privacy: false, paia: false, cookie: false, information_officer: false });
+  assertEquals(r1.body["notices"], { privacy: false, paia: false, cookie: false, information_officer: false });
   assert(!off.calls.some((c) => c.url.endsWith("/privacy")));
   const on = setup({ routes, env: { PROBE_NOTICE_PATHS: "true" } });
   const r2 = await call(on, post({ url: "https://example.co.za/" }));
-  assertEquals(r2.body.notices, { privacy: true, paia: true, cookie: false, information_officer: false });
+  assertEquals(r2.body["notices"], { privacy: true, paia: true, cookie: false, information_officer: false });
 });
 
 // ---------------------------------------------------------------- user-facing copy
@@ -374,8 +374,8 @@ Deno.test("copy: no dashes, exclamation marks or compliance claims in user-facin
   h.append("set-cookie", "sessionid=1");
   const s = setup({ routes: { "http://example.co.za/": () => new Response(bad, { headers: h }) } });
   const { body } = await call(s, post({ url: "http://example.co.za/" }));
-  for (const f of body.findings as Array<Record<string, string>>) strings.push(f.title, f.fix);
-  assert((body.findings as unknown[]).length >= 12);
+  for (const f of body["findings"] as Array<{ title: string; fix: string }>) strings.push(f.title, f.fix);
+  assert((body["findings"] as unknown[]).length >= 12);
   for (const str of strings) {
     assert(!/[\u2013\u2014!]/.test(str), `dash or exclamation in: ${str}`);
     assert(!/compliant/i.test(str), `compliance claim in: ${str}`);

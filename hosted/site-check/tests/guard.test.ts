@@ -269,7 +269,7 @@ Deno.test("url guard: refuses bad schemes, ports, IP literals and internal names
   }
 });
 Deno.test("url guard: allows public targets and strips credentials and fragment", () => {
-  const ok = [
+  const ok: Array<[string, string]> = [
     ["https://example.co.za/", "https://example.co.za/"],
     ["http://example.co.za:80/", "http://example.co.za/"],
     ["http://example.co.za:443/", "http://example.co.za:443/"],
@@ -351,15 +351,15 @@ Deno.test("dns: DoH resolver sends the right request and parses JSON", async () 
   });
   const r = await dohResolver(m.fn)("example.co.za", "A", sig());
   assertEquals(r, { status: 0, answers: [{ type: 5, data: "x.example.net." }, { type: 1, data: "203.0.114.1" }] });
-  assertEquals(new Headers(m.calls[0].init?.headers).get("accept"), "application/dns-json");
-  assert(m.calls[0].init?.signal instanceof AbortSignal);
+  assertEquals(new Headers(m.calls[0]!.init?.headers).get("accept"), "application/dns-json");
+  assert(m.calls[0]!.init?.signal instanceof AbortSignal);
 });
 Deno.test("dns: DoH errors fail closed", async () => {
   const name = "a&type=TXT&x=.example.co.za";
   const enc = `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(name)}&type=A`;
   const m1 = mockFetch({ [enc]: () => new Response("x", { status: 500 }) });
   await assertRejectsType(() => dohResolver(m1.fn)(name, "A", sig()), "dns_failed");
-  assertEquals(m1.calls[0].url, enc, "name is URL-encoded");
+  assertEquals(m1.calls[0]!.url, enc, "name is URL-encoded");
   const m2 = mockFetch({ [enc]: () => new Response("not json") });
   await assertRejectsType(() => dohResolver(m2.fn)(name, "A", sig()), "dns_failed");
 });

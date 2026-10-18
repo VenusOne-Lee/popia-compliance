@@ -179,13 +179,13 @@ export function parseIPv6(input: string): number[] | null {
     const i = s.lastIndexOf(":");
     const v4 = parseIPv4(s.slice(i + 1));
     if (!v4) return null;
-    s = s.slice(0, i + 1) + ((v4[0] << 8) | v4[1]).toString(16) + ":" + ((v4[2] << 8) | v4[3]).toString(16);
+    s = s.slice(0, i + 1) + ((v4[0]! << 8) | v4[1]!).toString(16) + ":" + ((v4[2]! << 8) | v4[3]!).toString(16);
   }
   const halves = s.split("::");
   if (halves.length > 2) return null;
   const grp = (h: string) => (h === "" ? [] : h.split(":"));
-  const head = grp(halves[0]);
-  const tail = halves.length === 2 ? grp(halves[1]) : [];
+  const head = grp(halves[0]!);
+  const tail = halves.length === 2 ? grp(halves[1]!) : [];
   const all = [...head, ...tail];
   if (!all.every((g) => /^[0-9a-fA-F]{1,4}$/.test(g))) return null;
   if (halves.length === 1 && head.length !== 8) return null;
@@ -197,10 +197,10 @@ export function parseIPv6(input: string): number[] | null {
 
 export function isPublicIPv4(o: number[]): boolean {
   const [a, b, c] = o;
-  if (a === 0 || a === 10 || a === 127 || a >= 224) return false; // this-net, private, loopback, multicast, reserved, broadcast
-  if (a === 100 && b >= 64 && b <= 127) return false; // CGNAT 100.64/10
+  if (a === 0 || a === 10 || a === 127 || a! >= 224) return false; // this-net, private, loopback, multicast, reserved, broadcast
+  if (a === 100 && b! >= 64 && b! <= 127) return false; // CGNAT 100.64/10
   if (a === 169 && b === 254) return false; // link-local incl. 169.254.169.254
-  if (a === 172 && b >= 16 && b <= 31) return false; // private
+  if (a === 172 && b! >= 16 && b! <= 31) return false; // private
   if (a === 192 && b === 168) return false; // private
   if (a === 192 && b === 0 && (c === 0 || c === 2)) return false; // IETF assignments, TEST-NET-1
   if (a === 192 && b === 88 && c === 99) return false; // 6to4 relay anycast
@@ -216,16 +216,16 @@ const v4FromGroups = (hi: number, lo: number) => [hi >> 8, hi & 0xff, lo >> 8, l
 export function isPublicIPv6(g: number[]): boolean {
   const zero = (from: number, to: number) => g.slice(from, to).every((x) => x === 0);
   // IPv4-mapped ::ffff:a.b.c.d: judge the embedded address.
-  if (zero(0, 5) && g[5] === 0xffff) return isPublicIPv4(v4FromGroups(g[6], g[7]));
+  if (zero(0, 5) && g[5] === 0xffff) return isPublicIPv4(v4FromGroups(g[6]!, g[7]!));
   // NAT64 well-known prefix 64:ff9b::/96: judge the embedded address.
-  if (g[0] === 0x64 && g[1] === 0xff9b && zero(2, 6)) return isPublicIPv4(v4FromGroups(g[6], g[7]));
+  if (g[0] === 0x64 && g[1] === 0xff9b && zero(2, 6)) return isPublicIPv4(v4FromGroups(g[6]!, g[7]!));
   // Only global unicast 2000::/3. This excludes ::, ::1, ::/8, 64:ff9b:1::/48, 100::/64,
   // fc00::/7, fe80::/10, fec0::/10, ff00::/8 and everything else outside 2000::/3.
-  if ((g[0] & 0xe000) !== 0x2000) return false;
-  if (g[0] === 0x2001 && g[1] < 0x0200) return false; // 2001::/23 IETF assignments incl. Teredo
+  if ((g[0]! & 0xe000) !== 0x2000) return false;
+  if (g[0] === 0x2001 && g[1]! < 0x0200) return false; // 2001::/23 IETF assignments incl. Teredo
   if (g[0] === 0x2001 && g[1] === 0x0db8) return false; // documentation
-  if (g[0] === 0x3fff && g[1] < 0x1000) return false; // 3fff::/20 documentation
-  if (g[0] === 0x2002) return isPublicIPv4(v4FromGroups(g[1], g[2])); // 6to4: judge the embedded address
+  if (g[0] === 0x3fff && g[1]! < 0x1000) return false; // 3fff::/20 documentation
+  if (g[0] === 0x2002) return isPublicIPv4(v4FromGroups(g[1]!, g[2]!)); // 6to4: judge the embedded address
   return true;
 }
 
@@ -245,7 +245,7 @@ export function isAllowedHostname(name: string): boolean {
   if (!host || host.length > 253 || !host.includes(".")) return false; // empty or single label
   const labels = host.split(".");
   if (!labels.every((l) => /^[a-z0-9_](?:[a-z0-9_-]{0,61}[a-z0-9_])?$/.test(l))) return false;
-  if (/^\d+$/.test(labels[labels.length - 1])) return false; // numeric TLD: an IP in disguise
+  if (/^\d+$/.test(labels[labels.length - 1]!)) return false; // numeric TLD: an IP in disguise
   return !BLOCKED_SUFFIXES.some((s) => host === s || host.endsWith("." + s));
 }
 
@@ -520,7 +520,7 @@ export async function guardedFetch(
   }
 }
 
-const isHtml = (ct: string) => ct.split(";")[0].trim() === "text/html";
+const isHtml = (ct: string) => ct.split(";")[0]!.trim() === "text/html";
 
 // ---------------------------------------------------------------- report URL sanitising
 
@@ -548,7 +548,7 @@ export function safeUrl(u: string, keepPath = true): string {
     path = abs.pathname;
     hasQuery = abs.search.length > 1;
   } else {
-    const noFrag = u.split("#")[0];
+    const noFrag = u.split("#")[0]!;
     const qi = noFrag.indexOf("?");
     hasQuery = qi >= 0 && qi < noFrag.length - 1;
     path = qi >= 0 ? noFrag.slice(0, qi) : noFrag;
@@ -576,7 +576,7 @@ function redact(prefix: string, path: string, hasQuery: boolean): string {
   // partial secret too short to match a pattern can never slip through.
   if (p.length > LIMITS.maxReportPath) {
     let end = LIMITS.maxReportPath;
-    while (end > 0 && TOKEN_CHAR.test(p[end - 1])) end--;
+    while (end > 0 && TOKEN_CHAR.test(p[end - 1]!)) end--;
     p = p.slice(0, end) + "…";
   }
   for (const [rx, sub] of REDACT) p = p.replace(rx, sub);
@@ -613,20 +613,20 @@ function parseAttrs(src: string): Record<string, string> {
   let i = 0;
   const n = src.length;
   while (i < n) {
-    while (i < n && /[\s\/]/.test(src[i])) i++;
+    while (i < n && /[\s\/]/.test(src[i]!)) i++;
     if (i >= n) break;
     const start = i;
-    while (i < n && !/[\s\/=>]/.test(src[i])) i++;
+    while (i < n && !/[\s\/=>]/.test(src[i]!)) i++;
     const name = src.slice(start, i).toLowerCase();
     if (!name) {
       i++;
       continue;
     }
-    while (i < n && /\s/.test(src[i])) i++;
+    while (i < n && /\s/.test(src[i]!)) i++;
     let value = "";
     if (src[i] === "=") {
       i++;
-      while (i < n && /\s/.test(src[i])) i++;
+      while (i < n && /\s/.test(src[i]!)) i++;
       const q = src[i];
       if (q === '"' || q === "'") {
         const end = src.indexOf(q, i + 1);
@@ -634,7 +634,7 @@ function parseAttrs(src: string): Record<string, string> {
         i = end < 0 ? n : end + 1;
       } else {
         const vs = i;
-        while (i < n && !/[\s>]/.test(src[i])) i++;
+        while (i < n && !/[\s>]/.test(src[i]!)) i++;
         value = src.slice(vs, i);
       }
     }
@@ -653,7 +653,7 @@ function tagEnd(html: string, from: number): number {
     } else if (c === '"' || c === "'") {
       // quotes only open after '=' (attribute value); a stray quote elsewhere is literal
       let j = i - 1;
-      while (j >= from && /\s/.test(html[j])) j--;
+      while (j >= from && /\s/.test(html[j]!)) j--;
       if (html[j] === "=") q = c;
     } else if (c === ">") return i;
   }
@@ -698,7 +698,7 @@ export function parseHtml(html: string): Page {
         i = lt + 1;
         continue;
       }
-      if (m[1].toLowerCase() === "a" && inA) {
+      if (m[1]!.toLowerCase() === "a" && inA) {
         page.links.push(inA);
         inA = null;
       }
@@ -711,7 +711,7 @@ export function parseHtml(html: string): Page {
       continue;
     }
     let j = lt + 1;
-    while (j < n && !/[\s\/>]/.test(html[j])) j++;
+    while (j < n && !/[\s\/>]/.test(html[j]!)) j++;
     const tag = html.slice(lt + 1, j).toLowerCase();
     const end = tagEnd(html, j);
     if (end < 0) break; // incomplete tag at EOF: stop, like HTMLParser
@@ -1138,7 +1138,7 @@ export interface CheckResult {
 
 export interface CheckOptions {
   probeNoticePaths?: boolean;
-  now?: () => Date;
+  now?: (() => Date) | undefined;
 }
 
 export async function runSiteCheck(input: string, ctx: Ctx, opts: CheckOptions = {}): Promise<CheckResult> {
@@ -1160,7 +1160,7 @@ export async function runSiteCheck(input: string, ctx: Ctx, opts: CheckOptions =
     : null;
   const secTxt = guardedFetch(`${base}/.well-known/security.txt`, ctx, {
     follow: true,
-    bodyLimit: (ct, st) => (st === 200 && ct.split(";")[0].trim() === "text/plain" ? LIMITS.maxSecurityTxtBytes : 0),
+    bodyLimit: (ct, st) => (st === 200 && ct.split(";")[0]!.trim() === "text/plain" ? LIMITS.maxSecurityTxtBytes : 0),
   });
   const mainPrefix = main.body.subarray(0, LIMITS.maxProbeBytes);
   const noticeProbes = opts.probeNoticePaths
@@ -1197,7 +1197,7 @@ export async function runSiteCheck(input: string, ctx: Ctx, opts: CheckOptions =
   const probed: Partial<Notices> = {};
   if (noticeR.length) {
     const found = (i: number) => {
-      const r = noticeR[i];
+      const r = noticeR[i]!;
       if (r.status !== "fulfilled" || !r.value || r.value.status !== 200) return false;
       if (!isHtml(r.value.contentType)) return true; // e.g. a PDF PAIA manual
       const b = r.value.body;
@@ -1249,7 +1249,7 @@ export function ipBucket(ip: string | null): string {
   if (v4) return "v4:" + v4.join(".");
   const v6 = parseIPv6(s);
   if (v6) {
-    if (v6.slice(0, 5).every((x) => x === 0) && v6[5] === 0xffff) return "v4:" + v4FromGroups(v6[6], v6[7]).join(".");
+    if (v6.slice(0, 5).every((x) => x === 0) && v6[5] === 0xffff) return "v4:" + v4FromGroups(v6[6]!, v6[7]!).join(".");
     return "v6:" + v6.slice(0, 4).map((x) => x.toString(16)).join(":") + "::/64";
   }
   return "unknown";
@@ -1269,9 +1269,9 @@ export const CLIENT_IP_HEADERS = ["cf-connecting-ip", "x-real-ip", "x-forwarded-
 /** "1.2.3.4:5678" and "[2001:db8::1]:443" to the bare address. Anything else is returned unchanged. */
 function stripPort(s: string): string {
   const b = /^\[([0-9A-Fa-f:.]+)\](?::\d{1,5})?$/.exec(s);
-  if (b) return b[1];
+  if (b) return b[1]!;
   const p = /^(\d{1,3}(?:\.\d{1,3}){3}):\d{1,5}$/.exec(s);
-  return p ? p[1] : s;
+  return p ? p[1]! : s;
 }
 
 /**
@@ -1285,7 +1285,7 @@ export function clientIp(req: Request, env: EnvFn): string | null {
     const v = req.headers.get(name);
     if (!v) continue;
     const parts = v.split(",").map((s) => s.trim()).filter(Boolean);
-    if (parts.length) return stripPort(parts[parts.length - 1]);
+    if (parts.length) return stripPort(parts[parts.length - 1]!);
   }
   return null;
 }
@@ -1366,7 +1366,7 @@ function json(body: unknown, status: number, origin: string | null): Response {
 
 /** Generic error body: a fixed message and a type. Never echoes input or upstream messages. */
 export function errorResponse(type: string, status: number, origin: string | null): Response {
-  return json({ error: ERROR_MESSAGES[type] ?? ERROR_MESSAGES.internal_error, type }, status, origin);
+  return json({ error: ERROR_MESSAGES[type] ?? ERROR_MESSAGES["internal_error"], type }, status, origin);
 }
 
 async function verifyTurnstile(token: string, secret: string, fetchFn: FetchFn, signal: AbortSignal): Promise<boolean> {
