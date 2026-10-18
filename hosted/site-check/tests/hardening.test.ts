@@ -428,3 +428,47 @@ Deno.test("anySignal: the fallback used when AbortSignal.any is missing works", 
     a.any = saved;
   }
 });
+
+// ---------------------------------------------------------------- Cloudflare Workers portability
+
+// Workers throw a TypeError for any redirect mode other than "follow" or "manual". Before this
+// test, the DoH and Turnstile calls used "error", so every check on Workers failed with fetch_failed.
+Deno.test("workers: every outbound fetch uses redirect manual, so a full check passes on Workers", async () => {
+  const modes: string[] = [];
+  const doh = (n: string, t: string) => `https://cloudflare-dns.com/dns-query?name=${n}&type=${t}`;
+  const json = (v: unknown) => () => new Response(JSON.stringify(v), { headers: { "content-type": "application/json" } });
+  const routes: Record<string, (u: string, i?: RequestInit) => Response> = {
+    [doh("example.co.za", "A")]: json({ Status: 0, Answer: [{ type: 1, data: "203.0.114.1" }] }),
+    [doh("example.co.za", "AAAA")]: json({ Status: 0 }),
+    "https://challenges.cloudflare.com/turnstile/v0/siteverify": json({ success: true }),
+    "https://example.co.za/": () =>
+      new Response("<html><a href='/privacy'>Privacy</a></html>", { headers: { "content-type": "text/html" } }),
+  };
+  const workersFetch = (url: string, init?: RequestInit): Promise<Response> => {
+    const mode = init?.redirect ?? "follow";
+    modes.push(mode);
+    if (mode !== "follow" && mode !== "manual") {
+      return Promise.reject(new TypeError(`Invalid redirect value, must be one of "follow" or "manual"`));
+    }
+    const r = routes[url];
+    return Promise.resolve(r ? r(url, init) : new Response("", { status: 404, headers: { "content-type": "text/html" } }));
+  };
+  const handler = createHandler({
+    fetch: workersFetch,
+    env: (k) =>
+      ({ ALLOWED_ORIGINS: "https://site.example.co.za", RATE_LIMIT_SALT: "s", TURNSTILE_SECRET: "t" } as Record<string, string>)[
+        k
+      ],
+    rateLimit: () => Promise.resolve(true),
+  });
+  const res = await handler(
+    new Request("https://site.example.co.za/api/site-check", {
+      method: "POST",
+      headers: { origin: "https://site.example.co.za", "content-type": "application/json" },
+      body: JSON.stringify({ url: "example.co.za", turnstileToken: "tok" }),
+    }),
+  );
+  assertEquals(res.status, 200, await res.clone().text());
+  assert(modes.length > 3, "DoH, Turnstile and the page were all fetched");
+  assert(modes.every((m) => m === "manual"), `modes: ${modes.join(",")}`);
+});
