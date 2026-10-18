@@ -3,3 +3,6 @@ contact_links:
   - name: Security vulnerability in this project
     url: https://github.com/VenusOne-Lee/popia-compliance/security/advisories/new
     about: Please report vulnerabilities privately.
+  - name: Legal reviewers who prefer private contact
+    url: mailto:popiakit@venusone.africa
+    about: Email us instead of opening a public issue.
