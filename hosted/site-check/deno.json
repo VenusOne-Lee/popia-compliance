@@ -7,7 +7,7 @@
     "noImplicitOverride": true
   },
   "tasks": {
-    "test": "SITE_CHECK_DISABLE_SERVE=1 deno test --allow-env tests/",
+    "test": "SITE_CHECK_DISABLE_SERVE=1 deno test --allow-env --allow-read=. tests/",
     "test:sql": "bash tests/sql/run_sql_tests.sh",
     "test:node": "cd adapters && npm install --no-audit --no-fund && npm test",
     "check": "deno check supabase/functions/site-check/index.ts supabase/functions/site-check/core.ts tests/",
