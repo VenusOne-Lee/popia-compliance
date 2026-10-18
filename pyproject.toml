@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "popia-kit"
+version = "1.1.0"
+description = "POPIA Kit: scanner, site check, compliance pack generator and MCP server for South African builders. Engineering guidance, not legal advice."
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT (code); CC BY 4.0 (guidance and templates)"}
+authors = [{name = "Venus ARC (Pty) Ltd, trading as Venus One"}]
+keywords = ["popia", "privacy", "south africa", "security", "compliance", "scanner", "mcp"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Topic :: Security",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/VenusOne-Lee/popia-compliance"
+Issues = "https://github.com/VenusOne-Lee/popia-compliance/issues"
+
+[project.scripts]
+popia-kit = "popia_kit.cli:main"
+popia-scan = "popia_kit.cli:run_scan"
+popia-site-check = "popia_kit.cli:run_site_check"
+popia-pack = "popia_kit.cli:run_pack"
+popia-badge = "popia_kit.cli:run_badge"
+popia-mcp = "popia_kit.cli:run_mcp"
+
+[tool.setuptools]
+# The repo keeps its clone-and-run layout. Packaging maps it into popia_kit.
+packages = [
+  "popia_kit",
+  "popia_kit.rules",
+  "popia_kit.mcp",
+  "popia_kit.data.references",
+  "popia_kit.data.packs",
+  "popia_kit.data.templates",
+]
+include-package-data = false
+
+[tool.setuptools.package-dir]
+"popia_kit" = "scripts"
+"popia_kit.rules" = "scripts/rules"
+"popia_kit.mcp" = "mcp"
+"popia_kit.data.references" = "references"
+"popia_kit.data.packs" = "packs"
+"popia_kit.data.templates" = "templates"
+
+[tool.setuptools.package-data]
+"popia_kit.mcp" = ["tools.json"]
+"popia_kit.data.references" = ["*.md"]
+"popia_kit.data.packs" = ["*.md"]
+"popia_kit.data.templates" = ["*.md", "*.csv", "*.json"]

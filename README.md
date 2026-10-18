@@ -37,27 +37,44 @@ Copy the matching file from [`adapters/`](adapters) into your project. Table and
 
 ### Any MCP client
 ```bash
+claude mcp add popia -- uvx --from git+https://github.com/VenusOne-Lee/popia-compliance popia-kit mcp
+# or, from a clone:
 claude mcp add popia -- python3 /path/to/popia-compliance/mcp/server.py
 ```
 Config for Claude Desktop, Cursor, VS Code and Windsurf: [`docs/mcp.md`](docs/mcp.md).
 
 ## Quick start
 
-Python 3.8+ and nothing else.
+Python 3.8 or newer and nothing else. No install needed: run it straight from GitHub with whichever tool you already have.
+
+```bash
+# uv
+uvx --from git+https://github.com/VenusOne-Lee/popia-compliance popia-kit scan .
+
+# pipx
+pipx run --spec git+https://github.com/VenusOne-Lee/popia-compliance popia-kit scan .
+
+# npm (still runs the Python tools, so Python 3.8+ must be installed)
+npx -y github:VenusOne-Lee/popia-compliance scan .
+```
+
+To keep it installed: `pipx install git+https://github.com/VenusOne-Lee/popia-compliance`, then use `popia-kit` anywhere.
+
+| Command | What it does |
+|---|---|
+| `popia-kit scan ./my-app --format md --out popia-scan.md` | Scan a codebase (43 rules). Also `--format json` or `--format sarif` |
+| `popia-kit site-check https://example.co.za --out site-check.md` | Passive check of a live site you own |
+| `popia-kit pack --interactive --out ./compliance-pack` | Answer questions, get draft notices, PAIA manual, ROPA and more |
+| `popia-kit badge popia-scan.json --out popia-badge.svg` | Dated badge from a scan or site check result |
+| `popia-kit id validate <id number>` | Check an SA ID number without logging it |
+| `popia-kit mcp` | Run the MCP server on stdio |
+
+Prefer a clone? Every command is also a plain script:
 
 ```bash
 git clone https://github.com/VenusOne-Lee/popia-compliance
 cd popia-compliance
-
-# scan a codebase
-python3 scripts/popia_scan.py ../my-app --format md --out popia-scan.md
-
-# try it on the deliberately broken demo app
-python3 scripts/popia_scan.py tests/fixtures/demo-app
-
-# passive check of a live site you own
-python3 scripts/site_check.py https://example.co.za --out site-check.md
-
+python3 scripts/popia_scan.py tests/fixtures/demo-app   # the deliberately broken demo app
 ```
 
 ### In CI
