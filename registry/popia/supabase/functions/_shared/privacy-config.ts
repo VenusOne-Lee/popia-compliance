@@ -107,12 +107,37 @@ export async function requireUser(req: Request, admin: SupabaseClient): Promise<
  * long-lived session cannot erase an account on its own. Window in minutes from
  * RECENT_AUTH_MINUTES (default 15). Your app should ask the person to sign in
  * again (password, magic link or OTP) and then retry.
+ *
+ * Uses the authentication time of the session making this request (the newest
+ * amr timestamp in its access token), not user.last_sign_in_at, which changes
+ * when the person signs in on any other device. Call it only after requireUser
+ * has verified the same token.
  */
-export function requireRecentSignIn(user: User): void {
+export function requireRecentSignIn(_user: User, req: Request): void {
   const minutes = Number(Deno.env.get("RECENT_AUTH_MINUTES") ?? "15");
-  const last = user.last_sign_in_at ? Date.parse(user.last_sign_in_at) : NaN;
-  if (!Number.isFinite(last) || Date.now() - last > minutes * 60_000) {
+  const authAt = sessionAuthTime(req);
+  if (authAt === null || Date.now() - authAt > minutes * 60_000) {
     throw new HttpError(401, "For your security, sign in again to confirm this request.");
+  }
+}
+
+/** Newest amr timestamp (ms) from the bearer token, or null. The token must already be verified. */
+export function sessionAuthTime(req: Request): number | null {
+  try {
+    const header = req.headers.get("Authorization") ?? "";
+    const jwt = header.startsWith("Bearer ") ? header.slice(7) : "";
+    const part = jwt.split(".")[1];
+    if (!part) return null;
+    const claims = JSON.parse(new TextDecoder().decode(base64UrlDecode(part)));
+    const amr = Array.isArray(claims?.amr) ? claims.amr : [];
+    let newest = NaN;
+    for (const a of amr) {
+      const t = Number(a?.timestamp);
+      if (Number.isFinite(t) && !(t <= newest)) newest = t;
+    }
+    return Number.isFinite(newest) ? newest * 1000 : null;
+  } catch {
+    return null;
   }
 }
 
@@ -314,10 +339,20 @@ export async function verifyUnsubscribeToken(token: string, secret: string): Pro
 }
 
 /** Client IP from standard proxy headers. Only ever stored hashed. */
+/**
+ * The left-most X-Forwarded-For entry is set by the client and can be forged,
+ * so prefer headers set by the platform, then the right-most entry (added by
+ * the nearest proxy).
+ */
 export function clientIp(req: Request): string | null {
+  const cf = req.headers.get("cf-connecting-ip")?.trim();
+  if (cf) return cf;
+  const real = req.headers.get("x-real-ip")?.trim();
+  if (real) return real;
   const xff = req.headers.get("x-forwarded-for");
-  if (xff) return xff.split(",")[0].trim();
-  return req.headers.get("x-real-ip") ?? req.headers.get("cf-connecting-ip");
+  if (!xff) return null;
+  const parts = xff.split(",").map((p) => p.trim()).filter(Boolean);
+  return parts.length ? parts[parts.length - 1] : null;
 }
 
 // ---------------------------------------------------------------------------
