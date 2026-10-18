@@ -21,6 +21,7 @@ Results are leads for review, not legal conclusions. Engineering guidance only, 
 | `tests/guard.test.ts` | IP, hostname, URL, DNS, redirect, timeout and body cap tests. |
 | `tests/checks.test.ts` | Finding logic, including the cases from the Python tests. |
 | `tests/handler.test.ts` | CORS, Turnstile, rate limiting, error hygiene, no logging, copy rules. |
+| `report/actions.json` | Proposed actions for each finding, the title of each cited section of the Act, and the copy for a downloadable report. `tests/actions.test.ts` checks it covers every rule. |
 | `tests/hardening.test.ts` | Client IP selection, the global cap, regex cost bounds, slow bodies, the hard overall budget, more host notations. |
 | `tests/helpers.ts` | Mock fetch, fake DNS resolver, small asserts. |
 | `tests/sql/run_sql_tests.sh` | Applies the migration to a throwaway local Postgres and tests it. |
@@ -151,7 +152,7 @@ The Node files live in `adapters/` with their own `package.json` on purpose. A `
 ## Tests
 
 ```sh
-deno task test             # 95 unit tests, no network
+deno task test             # 100 unit tests, no network
 deno task test:sql         # 27 migration tests on a throwaway local Postgres 14+ cluster
 deno task test:node        # 5 Node tests (npm install in adapters/, then node --test; Node 22.18+ to run .ts directly)
 deno task check            # type check the function and the Deno tests
@@ -184,6 +185,16 @@ Around the checks:
 - WEB-009 scans at most 256 characters of `server` and `x-powered-by`, and WEB-012 stops building evidence after 20 findings.
 
 The function never logs. It does not store the URL, the response or the findings. The only stored data is a salted SHA-256 of the client IP bucket, a window start and a count. Rows older than 2 hours are deleted on every call.
+
+## Downloadable report
+
+`report/actions.json` turns a result into a report people can act on. Build the report in the visitor's browser from the API response and this file. Nothing is sent or stored.
+
+- Group findings into the three `bands` by severity, and show each finding's `why`, `actions` and `kit` link.
+- List the findings again by section of the Act, using `sections` for the titles.
+- Include `covers`, `not_covered` and `disclaimer` as written.
+- Render every value from the API as text. Never make a URL from the scanned site clickable in the report.
+- Name the file with the checked host and date, for example `popia-site-check-example.co.za-2026-10-18.pdf`.
 
 ## Residual risks
 

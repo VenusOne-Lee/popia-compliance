@@ -1,0 +1,148 @@
+{
+  "version": "1.0.0",
+  "note": "Proposed actions for site check findings. Engineering guidance, not legal advice. Section titles are the headings in the Acts.",
+  "bands": [
+    { "id": "now", "title": "Fix first", "severities": ["critical", "high"], "intro": "These put personal information at risk or are clear gaps visitors will notice." },
+    { "id": "next", "title": "Plan next", "severities": ["medium"], "intro": "Schedule these in your next round of work." },
+    { "id": "good", "title": "Good practice", "severities": ["low", "info"], "intro": "Small changes that make the site harder to attack." }
+  ],
+  "sections": {
+    "s1": "Definitions",
+    "s11": "Consent, justification and objection",
+    "s18": "Notification to data subject when collecting personal information",
+    "s19": "Security measures on integrity and confidentiality of personal information",
+    "s20": "Information processed by operator or person acting under authority",
+    "s21": "Security measures regarding information processed by operator",
+    "s69": "Direct marketing by means of unsolicited electronic communications",
+    "s72": "Transfers of personal information outside Republic",
+    "PAIA s51": "Manual of a private body"
+  },
+  "kit": {
+    "consent": { "label": "POPIA Kit consent banner and ConsentGate", "url": "https://github.com/VenusOne-Lee/popia-compliance/blob/main/registry/README.md" },
+    "pack": { "label": "Draft it with the compliance pack: uvx popia-kit pack --interactive", "url": "https://github.com/VenusOne-Lee/popia-compliance/blob/main/docs/quickstart.md" },
+    "security": { "label": "POPIA Kit security controls guide", "url": "https://github.com/VenusOne-Lee/popia-compliance/blob/main/references/03-security-controls.md" },
+    "operators": { "label": "POPIA Kit guide to operators and cross-border transfers", "url": "https://github.com/VenusOne-Lee/popia-compliance/blob/main/references/06-cross-border-and-operators.md" },
+    "marketing": { "label": "POPIA Kit marketing opt-in component", "url": "https://github.com/VenusOne-Lee/popia-compliance/blob/main/registry/README.md" },
+    "scanner": { "label": "Scan your code: uvx popia-kit scan .", "url": "https://github.com/VenusOne-Lee/popia-compliance/blob/main/docs/quickstart.md" }
+  },
+  "rules": {
+    "WEB-001": {
+      "why": "Without HTTPS, anything a visitor types or receives can be read or changed on the way.",
+      "actions": ["Serve every page over HTTPS with a valid certificate.", "Redirect all HTTP requests to HTTPS."],
+      "kit": "security"
+    },
+    "WEB-002": {
+      "why": "Visitors who type the address without https stay on an unencrypted connection.",
+      "actions": ["Redirect every HTTP request to the HTTPS version of the same page."],
+      "kit": "security"
+    },
+    "WEB-003": {
+      "why": "HSTS tells browsers to always use HTTPS, which stops downgrade attacks.",
+      "actions": ["Send Strict-Transport-Security with a max-age of at least 6 months.", "Add includeSubDomains once every subdomain supports HTTPS."],
+      "kit": "security"
+    },
+    "WEB-004": {
+      "why": "A Content Security Policy limits which scripts can run, which reduces the damage from injected code.",
+      "actions": ["Add a Content-Security-Policy that allows scripts only from your own domain and the vendors you use.", "Avoid 'unsafe-inline' for scripts. Use nonces or hashes instead."],
+      "kit": "security"
+    },
+    "WEB-005": {
+      "why": "Without nosniff, a browser may treat an uploaded file as a script.",
+      "actions": ["Send X-Content-Type-Options: nosniff on every response."],
+      "kit": "security"
+    },
+    "WEB-006": {
+      "why": "Another site could load your pages in a hidden frame and trick visitors into clicking.",
+      "actions": ["Add frame-ancestors 'none' (or 'self') to your Content-Security-Policy, or send X-Frame-Options: DENY."],
+      "kit": "security"
+    },
+    "WEB-007": {
+      "why": "Full page addresses, which can contain personal details, may be sent to other sites.",
+      "actions": ["Send Referrer-Policy: strict-origin-when-cross-origin or stricter."],
+      "kit": "security"
+    },
+    "WEB-008": {
+      "why": "A Permissions-Policy switches off browser features the site does not need.",
+      "actions": ["Send Permissions-Policy: camera=(), microphone=(), geolocation=() unless you use them."],
+      "kit": "security"
+    },
+    "WEB-009": {
+      "why": "Version numbers tell attackers which known weaknesses to try.",
+      "actions": ["Remove version numbers from the Server and X-Powered-By headers."],
+      "kit": "security"
+    },
+    "WEB-010": {
+      "why": "A tracking cookie set before the visitor chooses means tracking starts without their say.",
+      "actions": ["Load analytics and marketing tags only after the visitor accepts them.", "Offer Accept all and Reject all with equal weight.", "Keep a record of each choice."],
+      "kit": "consent"
+    },
+    "WEB-011": {
+      "why": "A session cookie without Secure or HttpOnly is easier to steal.",
+      "actions": ["Set Secure, HttpOnly and SameSite=Lax (or Strict) on session and login cookies."],
+      "kit": "security"
+    },
+    "WEB-012": {
+      "why": "A script loaded over HTTP can be swapped for a malicious one on the way.",
+      "actions": ["Load every script over HTTPS.", "Remove scripts you no longer use."],
+      "kit": "security"
+    },
+    "WEB-013": {
+      "why": "Trackers run on the page but no consent tool was found to ask visitors first.",
+      "actions": ["Add a consent banner and load trackers only after consent.", "List each tracker and its provider in your cookie notice."],
+      "kit": "consent"
+    },
+    "WEB-014": {
+      "why": "A third-party tracker receives information about your visitors, often outside South Africa.",
+      "actions": ["Confirm you need this tracker.", "Name the provider in your privacy and cookie notices, including where it stores data.", "Check you have an agreement with the provider that covers how it protects the information."],
+      "kit": "operators"
+    },
+    "WEB-015": {
+      "why": "Visitors need to know who collects their information, why, and what their rights are.",
+      "actions": ["Publish a privacy notice.", "Link it in the footer and next to every form."],
+      "kit": "pack"
+    },
+    "WEB-016": {
+      "why": "Private bodies must publish a PAIA manual that explains how to request records.",
+      "actions": ["Publish a PAIA manual.", "Link it in the footer."],
+      "kit": "pack"
+    },
+    "WEB-017": {
+      "why": "The site uses trackers but does not explain them to visitors.",
+      "actions": ["Publish a cookie notice that lists each cookie, its purpose and provider.", "Link it from the footer and the consent banner."],
+      "kit": "pack"
+    },
+    "WEB-018": {
+      "why": "Without a security contact, people who find a weakness may not know how to tell you.",
+      "actions": ["Publish /.well-known/security.txt with a Contact line and an Expires date."],
+      "kit": "security"
+    },
+    "WEB-019": {
+      "why": "A box that is already ticked is not an active choice, so it cannot show consent.",
+      "actions": ["Leave marketing and consent boxes unticked by default.", "Use one box per purpose.", "Record what the person agreed to and when."],
+      "kit": "marketing"
+    },
+    "WEB-020": {
+      "why": "Passwords typed on a page without HTTPS can be read on the way.",
+      "actions": ["Serve the login page and the whole site over HTTPS."],
+      "kit": "security"
+    },
+    "WEB-021": {
+      "why": "Personal information in an address ends up in browser history, server logs and other sites' referrer data.",
+      "actions": ["Send personal information in the request body, not the address.", "Use opaque IDs in links."],
+      "kit": "security"
+    }
+  },
+  "covers": [
+    "Security headers and HTTPS",
+    "Cookies set before any choice",
+    "Trackers in the page's first load",
+    "Links to a privacy notice, cookie notice and PAIA manual",
+    "Pre-ticked boxes in forms"
+  ],
+  "not_covered": [
+    "Your code, database and access rules. Run the code scanner for those.",
+    "Pages behind a login, and what happens after a visitor clicks.",
+    "How you handle personal information inside your business, your contracts and your records."
+  ],
+  "disclaimer": "This report comes from a passive automated check of one page, its headers and its cookies. Findings are leads to review, not legal conclusions. It is not a compliance certificate and not legal advice. Prepared with POPIA Kit, free and open source from Venus ARC (Pty) Ltd, trading as Venus One."
+}

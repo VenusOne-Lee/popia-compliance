@@ -6,6 +6,9 @@ Legal content merged without a legal reviewer is marked `pending legal review` (
 
 ## [Unreleased]
 
+### Added
+- `hosted/site-check/report/actions.json`: a proposed action, reason and POPIA Kit pointer for every site check finding, the title of each cited section, and report copy. A test checks it covers every rule.
+
 ### Changed
 - popia-kit is on PyPI. Install commands are now `uvx popia-kit scan .`, `pipx run popia-kit scan .` and `pipx install popia-kit`.
 
