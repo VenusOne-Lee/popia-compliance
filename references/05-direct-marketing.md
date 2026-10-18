@@ -28,7 +28,7 @@ Is it direct marketing? (promoting goods/services, or requesting donations)
 - Purchased lists, scraped emails, LinkedIn exports, "business cards from the expo" for non-customers: **no consent**. Don't import into marketing tools.
 
 **Web form wording (substantially similar to Form 4)**
-> ☐ Yes, Venus One (Pty) Ltd may send me marketing about automation and Salesforce services by **email** and **WhatsApp**. I can withdraw at any time via the unsubscribe link or by emailing privacy@venusone.co.za.
+> ☐ Yes, Venus ARC (Pty) Ltd, trading as Venus One, may send me marketing about automation and Salesforce services by **email** and **WhatsApp**. I can withdraw at any time via the unsubscribe link or by emailing privacy@venusone.co.za.
 
 Separate boxes per channel if you want granular consent.
 

@@ -1,6 +1,6 @@
 name: "POPIA Scan"
 description: "Static POPIA and security scan for South African builders. Findings are leads for review, not legal conclusions."
-author: "Venus One (Pty) Ltd"
+author: "Venus ARC (Pty) Ltd (trading as Venus One)"
 branding:
   icon: "shield"
   color: "green"

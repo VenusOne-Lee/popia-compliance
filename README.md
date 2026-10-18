@@ -4,7 +4,7 @@
 
 An open-source skill that helps you build websites and apps that respect POPIA (the Protection of Personal Information Act) and prove it: a skill your AI tools load, a scanner that finds problems in your code, drop-in components that fix the common ones, and the documents an Information Officer needs.
 
-Maintained by Venus One (Pty) Ltd and contributors.
+Maintained by Venus One (Venus ARC (Pty) Ltd) and contributors.
 
 > [!IMPORTANT]
 > **Engineering guidance, not legal advice.** This project has **no legal reviewer yet**. Content is researched from the Act, the Regulations and the Information Regulator's publications, but has not been reviewed by an attorney. A clean scan is not a compliance certificate. Read [DISCLAIMER.md](DISCLAIMER.md). Attorneys: [we'd like your help](GOVERNANCE.md#the-legal-reviewer-seat).
@@ -103,4 +103,4 @@ The law changes, enforcement evolves and builders find new ways to leak data. He
 
 ## Licence
 
-Code: [MIT](LICENSE). Guidance, templates and other content: [CC BY 4.0](LICENSE-CONTENT), credit "Venus One (Pty) Ltd and contributors". Details in [LICENSING.md](LICENSING.md). Marks: [TRADEMARKS.md](TRADEMARKS.md).
+Code: [MIT](LICENSE). Guidance, templates and other content: [CC BY 4.0](LICENSE-CONTENT), credit "Venus One (Venus ARC (Pty) Ltd) and contributors". Details in [LICENSING.md](LICENSING.md). Marks: [TRADEMARKS.md](TRADEMARKS.md).

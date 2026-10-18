@@ -14,7 +14,7 @@
  */
 
 export interface CollectionNoticeProps {
-  /** Responsible party, for example "Venus One (Pty) Ltd". s18(1)(b). */
+  /** Responsible party, for example "Venus ARC (Pty) Ltd". s18(1)(b). */
   company: string;
   /** Plain purpose, for example "to reply to your enquiry and book a call". s18(1)(c). */
   purpose: string;

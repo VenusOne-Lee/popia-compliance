@@ -2,7 +2,7 @@
 
 ## Stewardship
 
-The project is maintained by **Venus One (Pty) Ltd** (Centurion, South Africa) as an open-source public good for South African builders. Venus One sets direction and holds final decision rights while the contributor community grows. We aim to add maintainers from outside Venus One as people make sustained contributions.
+The project is maintained by **Venus ARC (Pty) Ltd, trading as Venus One** (Centurion, South Africa) as an open-source public good for South African builders. Venus One sets direction and holds final decision rights while the contributor community grows. We aim to add maintainers from outside Venus One as people make sustained contributions.
 
 ## Roles
 

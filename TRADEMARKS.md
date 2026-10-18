@@ -1,6 +1,6 @@
 # Trademarks
 
-"Venus One", "The Automated Firm" and related logos are marks of Venus One (Pty) Ltd. The open-source licences in this repository cover code and content, not these marks.
+"Venus One", "The Automated Firm" and related logos are marks of Venus ARC (Pty) Ltd, trading as Venus One. The open-source licences in this repository cover code and content, not these marks.
 
 You may:
 - say your work is "based on" or "uses" the Venus One POPIA Compliance Skill, with a link;

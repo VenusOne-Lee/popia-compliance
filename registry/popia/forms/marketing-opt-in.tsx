@@ -43,7 +43,7 @@ const CHANNEL_LABEL: Record<MarketingChannel, string> = {
 };
 
 export interface MarketingBusinessIdentity {
-  /** Registered name, for example "Venus One (Pty) Ltd". */
+  /** Registered name, for example "Venus ARC (Pty) Ltd". */
   legalName: string;
   /** Contact for stop requests (s69(4)). Email or address. */
   contact: string;

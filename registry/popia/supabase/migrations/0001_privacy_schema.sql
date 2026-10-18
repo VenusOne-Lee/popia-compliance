@@ -1,5 +1,5 @@
 -- POPIA privacy schema for Supabase / Postgres 15+
--- Maintained by Venus One (Pty) Ltd. Engineering guidance, not legal advice.
+-- Maintained by Venus ARC (Pty) Ltd (trading as Venus One). Engineering guidance, not legal advice.
 --
 -- Creates schema "privacy" with:
 --   data_inventory   s17 documentation, s13 purpose, s14 retention, as data

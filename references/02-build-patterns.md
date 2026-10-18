@@ -73,7 +73,7 @@ Or for non-SQL stacks, a `privacy/inventory.yaml` checked into the repo. The ROP
 
   {/* s18 notice at collection */}
   <p className="text-xs">
-    Venus One (Pty) Ltd processes these details to respond to your request.
+    Venus ARC (Pty) Ltd (trading as Venus One) processes these details to respond to your request.
     See our <a href="/privacy">Privacy Notice</a> for your rights, including the right to object
     and to complain to the Information Regulator.
   </p>
