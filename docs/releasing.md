@@ -38,7 +38,7 @@ In GitHub, go to Settings, Environments, and create `pypi` and `npm`. Add yourse
 
 1. Update the version in `pyproject.toml`, `package.json` and `scripts/cli.py`.
 2. Move the `Unreleased` section of `CHANGELOG.md` under the new version and date.
-3. Merge to `main`, then tag and push:
+3. Merge to `main`. Then either publish a release in GitHub (Releases, Draft a new release, new tag `v1.1.0` on `main`, Publish), or tag and push:
 
    ```bash
    git tag v1.1.0
