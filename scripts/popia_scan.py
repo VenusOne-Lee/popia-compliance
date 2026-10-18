@@ -29,7 +29,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Dict, Iterable, List, Optional
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 SEVERITIES = ["critical", "high", "medium", "low", "info"]
 SEV_RANK = {s: i for i, s in enumerate(SEVERITIES)}
@@ -192,6 +192,8 @@ def iter_files(root: Path, ignore_globs: List[str]) -> Iterable[Path]:
         ]
         for fn in filenames:
             p = Path(dirpath) / fn
+            if p.is_symlink():
+                continue  # never follow links out of the scanned tree (e.g. to ~/.ssh in an untrusted repo)
             rel = os.path.relpath(p, root).replace(os.sep, "/")
             if any(fnmatch.fnmatch(rel, g) for g in ignore_globs):
                 continue

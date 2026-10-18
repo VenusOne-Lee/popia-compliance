@@ -13,8 +13,8 @@ An ID number is a unique identifier that reveals date of birth, sex and citizens
 status. Treat it as high-risk personal information (POPIA s19; s57 when linked
 across organisations). Never use it as a key, URL parameter or log value.
 
-    python3 sa_id.py validate 8001015009087
-    python3 sa_id.py mask 8001015009087
+    python3 sa_id.py validate 5912280409005
+    python3 sa_id.py mask 5912280409005
     python3 sa_id.py fake 5
 """
 from __future__ import annotations

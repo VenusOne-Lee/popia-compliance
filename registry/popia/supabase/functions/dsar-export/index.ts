@@ -17,6 +17,8 @@ import {
   corsHeaders,
   errorResponse,
   HttpError,
+  listAllObjects,
+  rateLimitRequests,
   requireUser,
 } from "../_shared/privacy-config.ts";
 
@@ -27,6 +29,8 @@ Deno.serve(async (req) => {
     assertOrigin(req);
     const admin = adminClient();
     const user = await requireUser(req, admin);
+    // Exports are expensive and hold everything about a person: limit them per user.
+    await rateLimitRequests(admin, user.id, "access", Number(Deno.env.get("EXPORTS_PER_HOUR") ?? "3"));
 
     const tables: Record<string, unknown> = {};
     for (const t of PRIVACY_TABLES) {
@@ -38,10 +42,14 @@ Deno.serve(async (req) => {
       tables[`${t.schema}.${t.table}`] = error ? { error: "Could not read this table." } : data;
     }
 
-    const files: Record<string, string[]> = {};
+    const files: Record<string, string[] | { error: string }> = {};
     for (const bucket of PRIVACY_BUCKETS) {
-      const { data } = await admin.storage.from(bucket).list(user.id, { limit: 1000 });
-      files[bucket] = (data ?? []).map((f) => `${user.id}/${f.name}`);
+      try {
+        files[bucket] = await listAllObjects(admin, bucket, user.id);
+      } catch {
+        // Say so rather than presenting an incomplete list as complete (s23).
+        files[bucket] = { error: "Could not list your files in this store. Contact us for a full copy." };
+      }
     }
 
     const { data: consent } = await admin

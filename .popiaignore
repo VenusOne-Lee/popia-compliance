@@ -1,0 +1,5 @@
+# Deliberately vulnerable fixtures used to test the scanner and the eval suite.
+tests/fixtures/
+evals/fixtures/
+evals/cases/
+tests/scanner/

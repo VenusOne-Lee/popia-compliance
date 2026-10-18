@@ -21,8 +21,10 @@ Engineering guidance, not legal advice. See DISCLAIMER.md.
 from __future__ import annotations
 
 import argparse
+import ipaddress
 import json
 import re
+import socket
 import ssl
 import sys
 import urllib.error
@@ -33,7 +35,7 @@ from http.cookies import SimpleCookie
 from typing import Dict, List, Optional
 from urllib.parse import urljoin, urlparse
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 UA = "popia-site-check/1.0 (+https://github.com/VenusOne-Lee/popia-compliance; passive)"
 SEV_ORDER = ["critical", "high", "medium", "low", "info"]
 
@@ -104,16 +106,50 @@ class _PageParser(HTMLParser):
             self._in_a["text"] += data
 
 
-def _fetch(url: str, timeout: float, method: str = "GET", follow: bool = True):
+class BlockedTarget(ValueError):
+    """Raised when a URL or redirect points somewhere site_check must not request."""
+
+
+def _is_public_host(host: str) -> bool:
+    """True only if every address the host resolves to is a public unicast address."""
+    try:
+        infos = socket.getaddrinfo(host, None)
+    except socket.gaierror:
+        return False
+    for info in infos:
+        ip = ipaddress.ip_address(info[4][0].split("%", 1)[0])
+        if (ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_multicast or ip.is_reserved
+                or ip.is_unspecified or (ip.version == 6 and ip.ipv4_mapped and not ip.ipv4_mapped.is_global)):
+            return False
+    return True
+
+
+def _check_target(url: str, block_private: bool) -> None:
+    u = urlparse(url)
+    if u.scheme not in ("http", "https") or not u.hostname:
+        raise BlockedTarget("only http and https URLs are checked")
+    if block_private and not _is_public_host(u.hostname):
+        raise BlockedTarget("target resolves to a private, loopback or reserved address")
+
+
+def _fetch(url: str, timeout: float, method: str = "GET", follow: bool = True, block_private: bool = False):
     ctx = ssl.create_default_context()
+    _check_target(url, block_private)
     req = urllib.request.Request(url, method=method, headers={"User-Agent": UA, "Accept": "text/html,*/*"})
 
     class NoRedirect(urllib.request.HTTPRedirectHandler):
         def redirect_request(self, *a, **k):
             return None
 
+    class SafeRedirect(urllib.request.HTTPRedirectHandler):
+        max_redirections = 5
+
+        def redirect_request(self, req, fp, code, msg, headers, newurl):
+            _check_target(newurl, block_private)  # every hop: http(s) only, public if required
+            return super().redirect_request(req, fp, code, msg, headers, newurl)
+
     opener = urllib.request.build_opener(urllib.request.HTTPSHandler(context=ctx),
-                                         *( [] if follow else [NoRedirect()] ))
+                                         SafeRedirect() if follow else NoRedirect())
     try:
         with opener.open(req, timeout=timeout) as r:
             body = r.read(2_000_000) if method == "GET" else b""
@@ -127,11 +163,43 @@ def _f(rule_id, title, severity, popia, evidence, fix):
             "evidence": evidence, "fix": fix}
 
 
-def check(url: str, timeout: float = 15, probe_paths: bool = True) -> dict:
-    if not re.match(r"^https?://", url):
+_REDACT = [
+    (re.compile(r"([A-Za-z0-9._%+-]{1,2})[A-Za-z0-9._%+-]*(@|%40)", re.I), r"\1***\2"),
+    (re.compile(r"\b\d{6}\d{4}\d{3}\b"), "*************"),
+    (re.compile(r"\b\d{9,19}\b"), "*********"),
+    (re.compile(r"(eyJ[A-Za-z0-9_-]{4})[A-Za-z0-9_.\-]{12,}"), r"\1…REDACTED"),
+    (re.compile(r"[A-Za-z0-9_\-]{32,}"), "…REDACTED"),
+]
+
+
+def safe_url(u: str, keep_path: bool = True) -> str:
+    """URL for reports: no credentials, query or fragment, and redacted path segments.
+    The original URL is still used for the request itself."""
+    try:
+        p = urlparse(u)
+    except ValueError:
+        return "[unparseable URL]"
+    host = p.hostname or ""
+    if p.port:
+        host = f"{host}:{p.port}"
+    path = p.path if keep_path else ""
+    for rx, sub in _REDACT:
+        path = rx.sub(sub, path)
+    note = " [query removed]" if p.query else ""
+    return f"{p.scheme}://{host}{path}{note}" if p.scheme else f"{host}{path}{note}"
+
+
+def check(url: str, timeout: float = 15, probe_paths: bool = True, block_private: bool = False) -> dict:
+    """Passive check. Set block_private=True when the URL comes from someone else (MCP, hosted use):
+    it refuses targets and redirects that resolve to private, loopback or reserved addresses."""
+    if not re.match(r"^https?://", url, re.I):
         url = "https://" + url
+    # Passive checks never authenticate: drop any user:password@ from the URL before requesting.
+    _u = urlparse(url)
+    if _u.username or _u.password:
+        url = _u._replace(netloc=_u.hostname + (f":{_u.port}" if _u.port else "")).geturl()
     findings: List[dict] = []
-    status, final_url, headers, body = _fetch(url, timeout)
+    status, final_url, headers, body = _fetch(url, timeout, block_private=block_private)
     parsed = urlparse(final_url)
     html = body.decode("utf-8", errors="ignore")
     page = _PageParser()
@@ -144,10 +212,11 @@ def check(url: str, timeout: float = 15, probe_paths: bool = True) -> dict:
     # ---- transport
     if parsed.scheme != "https":
         findings.append(_f("WEB-001", "Site not served over HTTPS", "critical", "s19",
-                           f"Final URL {final_url}", "Serve every page over HTTPS and redirect HTTP to HTTPS."))
+                           f"Final URL {safe_url(final_url)}", "Serve every page over HTTPS and redirect HTTP to HTTPS."))
     else:
         try:
-            s2, loc, h2, _ = _fetch("http://" + parsed.netloc + "/", timeout, follow=False)
+            s2, loc, h2, _ = _fetch("http://" + (parsed.hostname or "") + "/", timeout, follow=False,
+                                    block_private=block_private)
             loc = (h2.get("Location") if h2 else "") or ""
             if not (300 <= s2 < 400 and loc.startswith("https://")):
                 findings.append(_f("WEB-002", "HTTP does not redirect to HTTPS", "medium", "s19",
@@ -198,9 +267,11 @@ def check(url: str, timeout: float = 15, probe_paths: bool = True) -> dict:
         except Exception:
             continue
         for name, morsel in sc.items():
-            low = raw.lower()
-            c = {"name": name, "secure": "secure" in low, "httponly": "httponly" in low,
-                 "samesite": (re.search(r"samesite=(\w+)", low).group(1) if "samesite=" in low else None),
+            # Read parsed attributes, never search the raw header: a value like
+            # "session=secure-httponly" must not count as the Secure or HttpOnly flag.
+            samesite = morsel.get("samesite") or None
+            c = {"name": name, "secure": bool(morsel["secure"]), "httponly": bool(morsel["httponly"]),
+                 "samesite": samesite.lower() if isinstance(samesite, str) else None,
                  "tracking": bool(TRACKING_COOKIES.search(name))}
             cookies.append(c)
             if c["tracking"]:
@@ -217,8 +288,8 @@ def check(url: str, timeout: float = 15, probe_paths: bool = True) -> dict:
     for s in page.scripts:
         src = s.get("src", "")
         if src:
-            host = urlparse(urljoin(final_url, src)).netloc.lower()
-            if host and host != parsed.netloc.lower():
+            host = (urlparse(urljoin(final_url, src)).hostname or "").lower()
+            if host and host != (parsed.hostname or "").lower():
                 third_party.add(host)
                 if not s.get("integrity") and not any(d in host for d in TRACKER_DOMAINS):
                     pass
@@ -226,7 +297,7 @@ def check(url: str, timeout: float = 15, probe_paths: bool = True) -> dict:
                 if dom in host and name not in trackers:
                     trackers.append(name)
             if src.startswith("http://"):
-                findings.append(_f("WEB-012", "Script loaded over HTTP (mixed content)", "high", "s19", src,
+                findings.append(_f("WEB-012", "Script loaded over HTTP (mixed content)", "high", "s19", safe_url(src),
                                    "Load all scripts over HTTPS."))
     inline = "\n".join(page.inline_js)
     for pat, name in [(r"gtag\(\s*['\"]config", "Google Analytics / gtag"), (r"fbq\(\s*['\"]init", "Meta Pixel"),
@@ -258,10 +329,10 @@ def check(url: str, timeout: float = 15, probe_paths: bool = True) -> dict:
     }
     probed = {}
     if probe_paths and parsed.scheme in ("http", "https"):
-        base = f"{parsed.scheme}://{parsed.netloc}"
+        base = f"{parsed.scheme}://{parsed.hostname}" + (f":{parsed.port}" if parsed.port else "")
         for path in NOTICE_PATHS:
             try:
-                st, fu, _, b = _fetch(base + path, timeout)
+                st, fu, _, b = _fetch(base + path, timeout, block_private=block_private)
                 # SPAs often return index.html for every path: treat identical body as not found
                 probed[path] = st == 200 and b[:2000] != body[:2000]
             except Exception:
@@ -273,7 +344,7 @@ def check(url: str, timeout: float = 15, probe_paths: bool = True) -> dict:
         if any(probed.get(p) for p in ("/cookies", "/cookie-policy")):
             notices["cookie"] = True
         try:
-            st, _, _, b = _fetch(base + "/.well-known/security.txt", timeout)
+            st, _, _, b = _fetch(base + "/.well-known/security.txt", timeout, block_private=block_private)
             has_sec_txt = st == 200 and b"contact:" in b.lower()
         except Exception:
             has_sec_txt = False
@@ -306,14 +377,15 @@ def check(url: str, timeout: float = 15, probe_paths: bool = True) -> dict:
             findings.append(_f("WEB-020", "Password field on non-HTTPS page", "critical", "s19", "", "Serve over HTTPS."))
     for a in page.links + [{"href": s.get("src", "")} for s in page.scripts]:
         if re.search(r"[?&](email|phone|id_?number|mobile)=", a.get("href", ""), re.I):
-            findings.append(_f("WEB-021", "Personal information in a URL", "medium", "s19", a["href"][:120],
+            findings.append(_f("WEB-021", "Personal information in a URL", "medium", "s19", safe_url(a["href"])[:120],
                                "Never put PI in query strings."))
             break
 
     findings.sort(key=lambda f: SEV_ORDER.index(f["severity"]))
     summary = {s: sum(1 for f in findings if f["severity"] == s) for s in SEV_ORDER}
     return {
-        "tool": "site_check", "version": __version__, "url": url, "final_url": final_url, "status": status,
+        "tool": "site_check", "version": __version__, "url": safe_url(url), "final_url": safe_url(final_url),
+        "status": status,
         "checked_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "spa_suspected": spa, "summary": summary, "findings": findings, "cookies": cookies,
         "trackers": trackers, "third_party_script_hosts": sorted(third_party), "consent_tool": consent_tool,
@@ -358,11 +430,16 @@ def main(argv=None) -> int:
     ap.add_argument("--json", help="write JSON result")
     ap.add_argument("--timeout", type=float, default=15)
     ap.add_argument("--no-probe", action="store_true", help="don't request common notice paths")
+    ap.add_argument("--block-private", action="store_true",
+                    help="refuse private, loopback and reserved targets (use for URLs supplied by others)")
     a = ap.parse_args(argv)
     try:
-        res = check(a.url, a.timeout, probe_paths=not a.no_probe)
-    except Exception as e:  # network errors, TLS failures
-        print(f"site_check: could not fetch {a.url}: {e}", file=sys.stderr)
+        res = check(a.url, a.timeout, probe_paths=not a.no_probe, block_private=a.block_private)
+    except BlockedTarget as e:
+        print(f"site_check: refused: {e}", file=sys.stderr)
+        return 2
+    except Exception as e:  # network errors, TLS failures; never echo URL or message (may hold tokens)
+        print(f"site_check: could not fetch the site ({type(e).__name__})", file=sys.stderr)
         return 2
     md = fmt_md(res)
     if a.out:

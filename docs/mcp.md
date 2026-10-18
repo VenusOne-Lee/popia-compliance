@@ -136,6 +136,17 @@ printf '%s\n' \
   | python3 mcp/server.py
 ```
 
+## Safety limits
+
+The server enforces these limits itself, because an agent's instructions can come from untrusted content (prompt injection):
+
+| Tool | Limit | Override |
+|---|---|---|
+| `popia_scan` | Refuses filesystem roots, the home folder, and system or credential folders (`~/.ssh`, `~/.aws`, `~/.config`, `/etc` and similar). Never follows symlinks. | `POPIA_SCAN_ROOTS` (path list) restricts scanning further to named project folders. |
+| `popia_site_check` | Refuses private, loopback, link-local and reserved addresses, on every redirect hop. Never sends credentials embedded in the URL. | `POPIA_ALLOW_PRIVATE_URLS=1` for local development only. |
+| `popia_generate_pack` | Writes only to a new or empty sub-folder of the working directory. Never overwrites files. | `POPIA_SCAN_ROOTS` also sets where packs may be written. |
+| All tools | Unexpected errors return and log the exception type only, never its message. | None. |
+
 ## 4. Testing
 
 ```bash

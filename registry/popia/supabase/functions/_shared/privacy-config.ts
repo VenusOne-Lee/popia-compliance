@@ -102,6 +102,80 @@ export async function requireUser(req: Request, admin: SupabaseClient): Promise<
   return data.user;
 }
 
+/**
+ * Destructive actions (account deletion) need a recent sign-in, so a stolen or
+ * long-lived session cannot erase an account on its own. Window in minutes from
+ * RECENT_AUTH_MINUTES (default 15). Your app should ask the person to sign in
+ * again (password, magic link or OTP) and then retry.
+ */
+export function requireRecentSignIn(user: User): void {
+  const minutes = Number(Deno.env.get("RECENT_AUTH_MINUTES") ?? "15");
+  const last = user.last_sign_in_at ? Date.parse(user.last_sign_in_at) : NaN;
+  if (!Number.isFinite(last) || Date.now() - last > minutes * 60_000) {
+    throw new HttpError(401, "For your security, sign in again to confirm this request.");
+  }
+}
+
+/** Simple per-user rate limit backed by privacy.dsar_requests. */
+export async function rateLimitRequests(
+  admin: SupabaseClient,
+  userId: string,
+  type: string,
+  maxPerHour: number,
+): Promise<void> {
+  const since = new Date(Date.now() - 3_600_000).toISOString();
+  const { count, error } = await admin
+    .schema("privacy")
+    .from("dsar_requests")
+    .select("id", { count: "exact", head: true })
+    .eq("subject_id", userId)
+    .eq("type", type)
+    .gte("received_at", since);
+  if (error) throw new Error("rate_limit_check_failed");
+  if ((count ?? 0) >= maxPerHour) throw new HttpError(429, "Too many requests. Try again in an hour.");
+}
+
+// ---------------------------------------------------------------------------
+// Storage: list every object under a prefix (all pages, all sub-folders)
+// ---------------------------------------------------------------------------
+
+const STORAGE_PAGE = 100;
+const STORAGE_MAX_OBJECTS = 10_000;
+
+/**
+ * Returns every object path under `prefix` in `bucket`. Throws on any listing
+ * error, so callers never mistake a failed listing for an empty folder.
+ * Supabase lists one level at a time; folders come back with a null id.
+ */
+export async function listAllObjects(admin: SupabaseClient, bucket: string, prefix: string): Promise<string[]> {
+  const out: string[] = [];
+  const folders = [prefix.replace(/\/+$/, "")];
+  while (folders.length > 0) {
+    const folder = folders.pop() as string;
+    for (let offset = 0; ; offset += STORAGE_PAGE) {
+      const { data, error } = await admin.storage.from(bucket).list(folder, { limit: STORAGE_PAGE, offset });
+      if (error) throw new Error("storage_list_failed");
+      const items = data ?? [];
+      for (const item of items) {
+        const path = `${folder}/${item.name}`;
+        if (item.id === null) folders.push(path);
+        else out.push(path);
+        if (out.length > STORAGE_MAX_OBJECTS) throw new Error("storage_too_many_objects");
+      }
+      if (items.length < STORAGE_PAGE) break;
+    }
+  }
+  return out;
+}
+
+/** Removes paths in batches. Throws if any batch fails. */
+export async function removeObjects(admin: SupabaseClient, bucket: string, paths: string[]): Promise<void> {
+  for (let i = 0; i < paths.length; i += STORAGE_PAGE) {
+    const { error } = await admin.storage.from(bucket).remove(paths.slice(i, i + STORAGE_PAGE));
+    if (error) throw new Error("storage_remove_failed");
+  }
+}
+
 // ---------------------------------------------------------------------------
 // CORS allow-list from ALLOWED_ORIGINS (comma-separated)
 // ---------------------------------------------------------------------------
@@ -229,7 +303,7 @@ export async function verifyUnsubscribeToken(token: string, secret: string): Pro
   if (!body || !sig) return null;
   try {
     // crypto.subtle.verify compares in constant time.
-    const ok = await crypto.subtle.verify("HMAC", await hmacKey(secret), base64UrlDecode(sig), enc.encode(body));
+    const ok = await crypto.subtle.verify("HMAC", await hmacKey(secret), base64UrlDecode(sig) as BufferSource, enc.encode(body));
     if (!ok) return null;
     const parsed = JSON.parse(new TextDecoder().decode(base64UrlDecode(body))) as UnsubscribePayload;
     if (typeof parsed.s !== "string" || !Array.isArray(parsed.p)) return null;

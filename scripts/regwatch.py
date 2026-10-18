@@ -154,6 +154,8 @@ def update_state(state: dict, source_id: str, items: List[dict], now: str) -> di
 # Fetch
 # --------------------------------------------------------------------------------------
 def fetch(url: str, ua: str, timeout: float) -> str:
+    if not url.startswith("https://"):
+        raise ValueError("regwatch sources must be https URLs")
     req = urllib.request.Request(url, headers={"User-Agent": ua, "Accept": "text/html"})
     with urllib.request.urlopen(req, timeout=timeout) as r:  # nosec: fixed https sources from config
         data = r.read(MAX_BYTES)

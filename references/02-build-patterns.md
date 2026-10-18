@@ -176,7 +176,8 @@ export function isValidSaId(id: string): boolean {
   }
   return sum % 10 === 0;
 }
-export const maskSaId = (id: string) => id.replace(/^(\d{6})\d{4}(\d{3})$/, '******$2'.padStart(10, '*')) // shows last 3
+// Show only the last 3 digits. Mask before the value reaches the browser where you can.
+export const maskSaId = (id: string) => (/^\d{13}$/.test(id) ? '*'.repeat(10) + id.slice(-3) : '*'.repeat(13));
 ```
 
 Same high-risk treatment for: **bank account numbers and card data** (s105/106 offences; card data also PCI DSS: never store PAN/CVV, use the payment provider's tokens), passport numbers, tax numbers, medical aid numbers, biometric templates.
@@ -238,7 +239,10 @@ export const safe = (s: string) => s.replace(REDACT, '$1"[REDACTED]"');
 
 ```sql
 -- Supabase/Postgres: nightly retention with pg_cron
-create or replace function privacy.enforce_retention() returns void language plpgsql security definer as $$
+-- security definer runs with the owner's rights: pin search_path and lock down EXECUTE,
+-- or any caller who can reach the function can run your deletions.
+create or replace function privacy.enforce_retention() returns void
+language plpgsql security definer set search_path = '' as $$
 begin
   -- leads with no conversion after 12 months
   delete from public.leads where converted = false and created_at < now() - interval '12 months';
@@ -248,6 +252,8 @@ begin
    where closed_at < now() - interval '90 days' and deidentified_at is null;
   insert into privacy.retention_runs(ran_at) values (now());
 end $$;
+revoke all on function privacy.enforce_retention() from public, anon, authenticated;
+grant execute on function privacy.enforce_retention() to service_role;
 select cron.schedule('popia-retention', '15 2 * * *', 'select privacy.enforce_retention()');
 ```
 
