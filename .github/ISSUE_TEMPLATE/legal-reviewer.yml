@@ -1,0 +1,59 @@
+name: "Legal reviewer: volunteer"
+description: South African attorneys with POPIA experience who want to review POPIA Kit's legal content.
+title: "Legal reviewer: "
+labels: ["legal-review"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for offering to help. Reviews are small and you choose the scope.
+
+        **This issue is public.** Share only what you are happy for anyone to see. Don't include a phone number or client details. If you prefer to talk privately, email **popiakit@venusone.africa** instead.
+
+        Please read [the reviewer terms in GOVERNANCE.md](https://github.com/VenusOne-Lee/popia-compliance/blob/main/GOVERNANCE.md#reviewer-terms) first. In short: your review is not legal advice to users and creates no client relationship.
+  - type: input
+    id: name
+    attributes:
+      label: Name as you'd like to be credited
+    validations:
+      required: true
+  - type: input
+    id: practice
+    attributes:
+      label: Firm or practice (optional)
+  - type: dropdown
+    id: admitted
+    attributes:
+      label: Are you admitted as an attorney or advocate in South Africa?
+      options:
+        - "Yes, attorney"
+        - "Yes, advocate"
+        - "No, but I work in privacy (for example an Information Officer or privacy professional)"
+    validations:
+      required: true
+  - type: textarea
+    id: experience
+    attributes:
+      label: Your POPIA experience
+      description: A sentence or two is plenty.
+    validations:
+      required: true
+  - type: checkboxes
+    id: areas
+    attributes:
+      label: What would you be willing to review?
+      options:
+        - label: "Legal map (references/01-popia-legal-map.md)"
+        - label: "Privacy notice, cookie notice and PAIA manual templates (templates/)"
+        - label: "Breach guidance (references/07-breach-response.md)"
+        - label: "Direct marketing guidance (references/05-direct-marketing.md)"
+        - label: "Cross-border and operator guidance (references/06-cross-border-and-operators.md)"
+        - label: "A sector pack (packs/)"
+        - label: "Open pull requests labelled legal-review"
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Reviewer terms
+      options:
+        - label: I have read the reviewer terms in GOVERNANCE.md.
+          required: true

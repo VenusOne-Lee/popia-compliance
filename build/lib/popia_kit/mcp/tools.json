@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "note": "Single source of tool definitions for the local stdio server (mcp/server.py) and the planned hosted server. Keep names, descriptions and inputSchema identical in both.",
+  "tools": [
+    {
+      "name": "popia_scan",
+      "description": "Run the POPIA static scanner over a local file or directory. Returns findings as leads for review (secrets, access control, PI in code and logs, transport). Snippets are redacted. Local only.",
+      "local_only": true,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {"type": "string", "description": "Absolute or relative path to a repository, directory or file on this machine."},
+          "min_severity": {"type": "string", "enum": ["critical", "high", "medium", "low", "info"], "default": "info", "description": "Lowest severity to report."},
+          "rules": {"type": "string", "description": "Optional comma-separated rule ids, for example SEC-001,SEC-004."},
+          "format": {"type": "string", "enum": ["md", "json"], "default": "md", "description": "Output format."}
+        },
+        "required": ["path"],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "popia_scan_snippet",
+      "description": "Scan pasted code with the POPIA static scanner. The content is written to a temporary directory under the given filename, scanned, then deleted. Nothing is stored. Use when the repository is not on this machine.",
+      "local_only": false,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "filename": {"type": "string", "description": "File name including extension, for example supabase/migrations/001_init.sql or src/lib/client.ts. Extension decides which rules apply."},
+          "content": {"type": "string", "description": "File content to scan. Maximum 500000 characters."},
+          "min_severity": {"type": "string", "enum": ["critical", "high", "medium", "low", "info"], "default": "info"},
+          "format": {"type": "string", "enum": ["md", "json"], "default": "md"}
+        },
+        "required": ["filename", "content"],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "popia_site_check",
+      "description": "Passive check of a live website: security headers, cookies set before consent, third-party trackers, links to privacy notice, PAIA manual, cookie notice and Information Officer. Makes ordinary GET requests only. No active testing.",
+      "local_only": false,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "url": {"type": "string", "description": "Full URL including https://"}
+        },
+        "required": ["url"],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "popia_generate_pack",
+      "description": "Generate a POPIA document pack (privacy notice, ROPA, retention schedule and related drafts) from questionnaire answers. Returns file contents, and writes them to out_dir if given. Drafts need human and legal review.",
+      "local_only": true,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "answers": {"type": "object", "description": "Questionnaire answers keyed by question id. See scripts/popia_pack.py load_questions()."},
+          "out_dir": {"type": "string", "description": "Optional directory to write the files into."}
+        },
+        "required": ["answers"],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "popia_validate_sa_id",
+      "description": "Check whether a South African ID number is structurally valid (date, citizenship digit, Luhn). Returns only the valid flag and a masked value. Never echoes the full number. Use synthetic IDs in tests.",
+      "local_only": false,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id_number": {"type": "string", "description": "13-digit SA ID number."}
+        },
+        "required": ["id_number"],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "popia_lookup",
+      "description": "Keyword search across the skill's reference files and packs. Returns the best matching sections (heading and text, capped). Use to answer what POPIA expects for a topic, with section citations.",
+      "local_only": false,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {"type": "string", "description": "Keywords, for example direct marketing whatsapp consent."},
+          "max_results": {"type": "integer", "minimum": 1, "maximum": 10, "default": 4}
+        },
+        "required": ["query"],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "popia_checklist",
+      "description": "Return audit checklist tables (control IDs and checks) for one POPIA area, parsed from the reference files.",
+      "local_only": false,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "area": {
+            "type": "string",
+            "enum": ["accountability", "processing", "purpose", "openness", "security", "participation", "special", "children", "marketing", "crossborder", "breach", "ai", "all"],
+            "description": "Checklist area."
+          }
+        },
+        "required": ["area"],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "popia_breach_triage",
+      "description": "Deterministic s22 security compromise triage. Returns the playbook steps, severity cues matched from the description, and a pre-filled checklist. No model call. Do not paste personal information into the description.",
+      "local_only": false,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "description": {"type": "string", "description": "Short description of what happened, without names, ID numbers or other personal information."}
+        },
+        "required": ["description"],
+        "additionalProperties": false
+      }
+    }
+  ]
+}

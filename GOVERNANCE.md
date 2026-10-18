@@ -18,7 +18,23 @@ The project is maintained by **Venus ARC (Pty) Ltd, trading as Venus One** (Cent
 
 We don't have a legal reviewer yet, and we say so plainly in [DISCLAIMER.md](DISCLAIMER.md) and the README.
 
-We're looking for an admitted South African attorney (or a firm) with privacy and data protection experience. The role is light: review `legal-review` PRs, flag errors in existing content, and sign off releases that change legal guidance. Reviewers are credited by name on the README and next to the content they reviewed. If that's you, open an issue titled "Legal reviewer" or contact the lead maintainer.
+We're looking for an admitted South African attorney (or a firm) with privacy and data protection experience. The role is light: review `legal-review` PRs, flag errors in existing content, and sign off releases that change legal guidance. Reviewers are credited by name on the README and next to the content they reviewed.
+
+**To volunteer:** email **popiakit@venusone.africa**, or, if you're on GitHub, open a [Legal reviewer: volunteer](https://github.com/VenusOne-Lee/popia-compliance/issues/new?template=legal-reviewer.yml) issue (that issue is public).
+
+### Reviewer terms
+
+These terms protect reviewers and users. They are part of this project and apply to every review.
+
+1. **Not legal advice to users.** A review checks the project's content for accuracy. It is not legal advice to anyone who uses POPIA Kit, and users are told so in [DISCLAIMER.md](DISCLAIMER.md).
+2. **No client relationship.** Reviewing creates no attorney and client relationship between a reviewer and any user, maintainer, contributor or Venus ARC (Pty) Ltd. Any engagement for advice is separate and must be agreed in writing.
+3. **Dated, scoped sign-off.** A sign-off means the reviewer checked the named content against the law as it stood on the review date. It is not a guarantee, and it does not cover later changes or other content.
+4. **You choose the scope and the pace.** There are no minimum hours or deadlines. You can decline any request and step away at any time.
+5. **Credit, or not.** Reviewers are credited by name (and firm, if they wish) in the README and next to the content they reviewed. You can ask for your name to be removed at any time.
+6. **Conflicts and confidentiality.** Don't review content where you have a conflict. Never include client information in a review, an issue or a pull request.
+7. **Licence.** Review comments and edits are contributions under [LICENSE-CONTENT](LICENSE-CONTENT) (CC BY 4.0), like all other guidance in this project.
+
+These terms were drafted without a lawyer and are `pending legal review`. The first legal reviewer is welcome to change them.
 
 **While the seat is vacant:** PRs that change legal content need approval from two maintainers, must cite primary sources, and are recorded in the CHANGELOG as `pending legal review`. When a legal reviewer joins, their first task is a review of all `pending legal review` items.
 

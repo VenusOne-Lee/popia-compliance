@@ -8,7 +8,7 @@ Please read [DISCLAIMER.md](DISCLAIMER.md) and [GOVERNANCE.md](GOVERNANCE.md) fi
 
 | You are | Most valuable contribution |
 |---|---|
-| **Attorney / privacy professional** | Review legal content, correct errors, approve `legal-review` PRs, become the legal reviewer |
+| **Attorney / privacy professional** | Review legal content, correct errors, approve `legal-review` PRs, become the legal reviewer. Email popiakit@venusone.africa or use the "Legal reviewer: volunteer" issue form. [Reviewer terms](GOVERNANCE.md#reviewer-terms) |
 | **Developer** | New scanner rules, stack playbooks, components, bug fixes, false-positive reports |
 | **Information Officer / compliance** | Checklist gaps, real-world process patterns, template improvements |
 | **Translator** | Review a draft translation in `i18n/` (Afrikaans, isiZulu, isiXhosa, Setswana, more welcome) |

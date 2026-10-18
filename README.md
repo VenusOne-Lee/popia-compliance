@@ -116,7 +116,7 @@ The law changes, enforcement evolves and builders find new ways to leak data. He
 
 - **Report a law change:** open a [law-change issue](.github/ISSUE_TEMPLATE/law-change.yml). A monthly automated watch of the Regulator's site opens these too.
 - **Add a scanner rule, component, pack or translation:** see [CONTRIBUTING.md](CONTRIBUTING.md).
-- **Attorneys and privacy professionals:** the legal reviewer seat is open. See [GOVERNANCE.md](GOVERNANCE.md).
+- **Attorneys and privacy professionals:** the legal reviewer seat is open. Small, focused reviews, credited by name, and a review is not legal advice to users. Email **popiakit@venusone.africa** or see [GOVERNANCE.md](GOVERNANCE.md#reviewer-terms).
 
 ## Licence
 
