@@ -338,7 +338,7 @@ export function dohResolver(fetchFn: FetchFn): DnsResolver {
     const res = await fetchFn(`${DOH_URL}?name=${encodeURIComponent(name)}&type=${type}`, {
       method: "GET",
       headers: { accept: "application/dns-json" },
-      redirect: "error",
+      redirect: "manual", // Cloudflare Workers reject "error". A 3xx is not ok, so it is refused below.
       signal: sig,
     });
     if (!res.ok) {
@@ -1377,7 +1377,7 @@ async function verifyTurnstile(token: string, secret: string, fetchFn: FetchFn, 
       method: "POST",
       body,
       headers: { "content-type": "application/x-www-form-urlencoded" },
-      redirect: "error",
+      redirect: "manual", // Cloudflare Workers reject "error". A 3xx is not ok, so it is refused below.
       signal: sig,
     });
     if (!res.ok) {

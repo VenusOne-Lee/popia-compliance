@@ -151,7 +151,7 @@ The Node files live in `adapters/` with their own `package.json` on purpose. A `
 ## Tests
 
 ```sh
-deno task test             # 94 unit tests, no network
+deno task test             # 95 unit tests, no network
 deno task test:sql         # 27 migration tests on a throwaway local Postgres 14+ cluster
 deno task test:node        # 5 Node tests (npm install in adapters/, then node --test; Node 22.18+ to run .ts directly)
 deno task check            # type check the function and the Deno tests

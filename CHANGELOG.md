@@ -20,6 +20,7 @@ Legal content merged without a legal reviewer is marked `pending legal review` (
 - `evals/run_evals.py` refuses provider URLs that are not http or https.
 
 ### Fixed
+- Hosted site check works on Cloudflare Workers. The DNS over HTTPS and Turnstile calls used `redirect: "error"`, which Workers reject, so every check failed with `fetch_failed`. They now use `redirect: "manual"` and refuse any redirect. A new test fakes the Workers fetch rule.
 - Build output (`build/`, `popia_kit.egg-info/`) is no longer tracked in git.
 - Hosted site check type checks under strict TypeScript (`noUncheckedIndexedAccess`, `exactOptionalPropertyTypes` and related flags), so strict projects can copy `core.ts` without `@ts-nocheck`. Type-only change, CI now enforces the flags.
 - Edge functions: "Delete my account" now checks when the session making the request signed in (its `amr` timestamp), not the account's last sign-in, which any other device could refresh. Client IP for consent evidence prefers `cf-connecting-ip` and `x-real-ip`, then the right-most `X-Forwarded-For` entry, because the left-most one is set by the client. Found in a review of the Lovable port.
