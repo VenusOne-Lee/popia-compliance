@@ -116,7 +116,7 @@ Deno.test("client ip: requests without a usable IP share one bucket", async () =
   await s.handler(post());
   await s.handler(post({ "x-forwarded-for": "not-an-ip" }));
   const want = await hashIp("unknown", SALT);
-  assertEquals([s.hits[0].hash, s.hits[2].hash], [want, want]);
+  assertEquals([s.hits[0]!.hash, s.hits[2]!.hash], [want, want]);
 });
 
 // ---------------------------------------------------------------- global cap
@@ -128,18 +128,18 @@ Deno.test("global cap: checked after the per-IP check with a fixed key, default 
   assertEquals(s.hits.length, 2);
   assertEquals(s.hits[0], { hash: await hashIp("v4:41.1.2.3", SALT), limit: 10 });
   assertEquals(s.hits[1], { hash: await hashIp(GLOBAL_BUCKET, SALT), limit: 300 });
-  assert(/^[0-9a-f]{64}$/.test(s.hits[1].hash), "fits the table's hash check");
+  assert(/^[0-9a-f]{64}$/.test(s.hits[1]!.hash), "fits the table's hash check");
   assertEquals(ipBucket(GLOBAL_BUCKET), "unknown", "no IP input can produce the global bucket");
   const other = setup();
   await other.handler(post({ "cf-connecting-ip": "41.9.9.9" }));
-  assertEquals(other.hits[1].hash, s.hits[1].hash, "same global key for every client");
+  assertEquals(other.hits[1]!.hash, s.hits[1]!.hash, "same global key for every client");
 });
 Deno.test("global cap: GLOBAL_LIMIT_PER_HOUR, with invalid values falling back to 300", async () => {
   const cases: Array<[string, number]> = [["50", 50], ["abc", 300], ["0", 300], ["-1", 300], ["99999999", 1_000_000]];
   for (const [raw, want] of cases) {
     const s = setup({ env: { GLOBAL_LIMIT_PER_HOUR: raw } });
     await s.handler(post());
-    assertEquals(s.hits[1].limit, want, raw);
+    assertEquals(s.hits[1]!.limit, want, raw);
   }
 });
 Deno.test("global cap: refused, failing or odd global answers fail closed with 429", async () => {
@@ -202,7 +202,7 @@ Deno.test("redos: one huge http script src, or thousands of them, stays fast", (
   fast(performance.now() - t, 1_000, "1.4 MB src");
   const w12 = one.findings.filter((f) => f.rule_id === "WEB-012");
   assertEquals(w12.length, 1);
-  assert(w12[0].evidence.length <= LIMITS.maxEvidence);
+  assert(w12[0]!.evidence.length <= LIMITS.maxEvidence);
   const many = `<script src="http://cdn.example.co.za/${"b".repeat(400)}"></script>`.repeat(3_000);
   t = performance.now();
   const r = checkHtml(many, "https://e.co.za/");

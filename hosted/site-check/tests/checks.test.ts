@@ -103,15 +103,15 @@ Deno.test("parity test_hardening: cookie flags are not spoofed by values", async
   const url = `http://site.example.co.za/profile?email=${EMAIL_ENC}&token=${SECRET}`;
   const res = await runSiteCheck(url, makeCtx(m.fn, fakeDns(publicDns("site.example.co.za")).resolve));
   const c = Object.fromEntries(res.cookies.map((x) => [x.name, x]));
-  assertEquals(c["session_id"].secure, false);
-  assertEquals(c["session_id"].httponly, false);
-  assertEquals(c["auth_token"].secure, true);
-  assertEquals(c["auth_token"].httponly, true);
-  assertEquals(c["auth_token"].samesite, "lax");
+  assertEquals(c["session_id"]!.secure, false);
+  assertEquals(c["session_id"]!.httponly, false);
+  assertEquals(c["auth_token"]!.secure, true);
+  assertEquals(c["auth_token"]!.httponly, true);
+  assertEquals(c["auth_token"]!.samesite, "lax");
   const weak = res.findings.filter((f) => f.rule_id === "WEB-011");
   assertEquals(weak.length, 1);
-  assert(weak[0].evidence.includes("session_id"));
-  assertEquals(weak[0].evidence, "session_id: secure=False httponly=False");
+  assert(weak[0]!.evidence.includes("session_id"));
+  assertEquals(weak[0]!.evidence, "session_id: secure=False httponly=False");
 });
 
 // ---------------------------------------------------------------- cookies
@@ -192,8 +192,8 @@ Deno.test("headers: missing headers on HTTPS", () => {
 Deno.test("headers: HTTP final URL gives WEB-001 and skips HSTS", () => {
   const got = checkHeaders({ finalUrl: "http://example.co.za/", headers: hdr(GOOD) });
   assertEquals(ids(got), ["WEB-001"]);
-  assertEquals(got[0].title, "Site not served over HTTPS");
-  assertEquals(got[0].evidence, "Final URL http://example.co.za/");
+  assertEquals(got[0]!.title, "Site not served over HTTPS");
+  assertEquals(got[0]!.evidence, "Final URL http://example.co.za/");
 });
 Deno.test("headers: short HSTS, weak CSP, framing and versions", () => {
   const short = checkHeaders({
@@ -328,7 +328,7 @@ Deno.test("html: mixed content and PI in URLs", () => {
   assertEquals(r.findings.filter((f) => f.rule_id === "WEB-012").length, 1);
   const pi = r.findings.filter((f) => f.rule_id === "WEB-021");
   assertEquals(pi.length, 1, "reported once");
-  assertEquals(pi[0].evidence, "/x [query removed]");
+  assertEquals(pi[0]!.evidence, "/x [query removed]");
 });
 Deno.test("html: parser handles quotes, entities, odd markup and __proto__", () => {
   const p = parseHtml(`<a data-x="a>b" href='/priv&amp;acy' __proto__="x">Privacy &amp; you</a>
@@ -336,7 +336,7 @@ Deno.test("html: parser handles quotes, entities, odd markup and __proto__", () 
     <style>a{}</style><a href="/c"`);
   // "<scr<a" is one tag name, as in Python's HTMLParser; the script string and the unterminated tag are ignored
   assertEquals(p.links.map((l) => l.href), ["/priv&acy", "/paia"]);
-  assertEquals(p.links[0].text, "Privacy & you");
+  assertEquals(p.links[0]!.text, "Privacy & you");
   assertEquals(p.inlineJs.length, 1);
   assertEquals(Object.getPrototypeOf({}), Object.prototype, "no global prototype change");
 });

@@ -89,7 +89,7 @@ test("guardedLookup: refuses when any address is not public, passes public answe
   const fake = (addrs: Array<[string, number]>): LookupFn => (_h, _o, cb) =>
     cb(null, addrs.map(([address, family]) => ({ address, family })));
   const run = (base: LookupFn, options: unknown) =>
-    new Promise<{ err: (Error & { code?: string }) | null; a: unknown; f?: number }>((r) =>
+    new Promise<{ err: (Error & { code?: string }) | null; a: unknown; f?: number | undefined }>((r) =>
       guardedLookup(base)("x.example.co.za", options as never, (err, a, f) => r({ err: err as never, a, f }))
     );
   const ok = await run(fake([["41.0.0.1", 4], ["2c0f:fb50::1", 6]]), { all: true });
@@ -156,9 +156,9 @@ test("node rate limit adapter: supabase-js RPC wiring, false, errors and missing
       ({ SUPABASE_URL: `http://127.0.0.1:${srv.port}`, SUPABASE_SERVICE_ROLE_KEY: "srk" } as Record<string, string>)[k];
     const sig = new AbortController().signal;
     assert.equal(await nodeSupabaseRateLimit("a".repeat(64), 7, sig, env), true);
-    assert.equal(srv.hits[0].url, "/rest/v1/rpc/site_check_hit");
-    assert.deepEqual(JSON.parse(srv.hits[0].body), { p_ip_hash: "a".repeat(64), p_limit: 7 });
-    assert.equal(srv.hits[0].headers.authorization, "Bearer srk");
+    assert.equal(srv.hits[0]!.url, "/rest/v1/rpc/site_check_hit");
+    assert.deepEqual(JSON.parse(srv.hits[0]!.body), { p_ip_hash: "a".repeat(64), p_limit: 7 });
+    assert.equal(srv.hits[0]!.headers.authorization, "Bearer srk");
     reply = [200, "false"];
     assert.equal(await nodeSupabaseRateLimit("a".repeat(64), 7, sig, env), false);
     reply = [500, JSON.stringify({ message: "boom" })];

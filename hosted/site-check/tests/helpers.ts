@@ -32,7 +32,7 @@ export function assertThrowsType(fn: () => unknown, type: string, msg = "") {
 export type Route = (url: string, init?: RequestInit) => Response | Promise<Response>;
 export interface Call {
   url: string;
-  init?: RequestInit;
+  init?: RequestInit | undefined;
 }
 
 /** Routes keyed by exact URL. Unknown URLs return 404 text/html. Records every call. */
