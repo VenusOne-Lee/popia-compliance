@@ -126,9 +126,15 @@ jobs:
           name: dist
           path: dist/
 
-      - name: Create the release with the built files
+      # Works both ways: a tag pushed from git, or a release published in the GitHub UI
+      # (which creates the tag). In the second case the release exists, so attach the files.
+      - name: Create the release, or attach the built files to it
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" \
-            --notes "See CHANGELOG.md. Install: pipx install popia-kit, or run uvx popia-kit scan . Engineering guidance, not legal advice."
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" \
+              --notes "See CHANGELOG.md. Install: pipx install popia-kit, or run uvx popia-kit scan . Engineering guidance, not legal advice."
+          fi
