@@ -46,7 +46,7 @@ We're looking for an admitted South African attorney (or a firm) with privacy an
 
 ## Releases
 
-Semantic versioning for code (`v1.2.0`). Content changes are also tagged and listed in CHANGELOG.md with the legal effective date of any law change they reflect. The GitHub Action is published as `VenusOne-Lee/popia-compliance@v1` and moves on minor releases.
+Semantic versioning for code (`v1.2.0`). Content changes are also tagged and listed in CHANGELOG.md with the legal effective date of any law change they reflect. The GitHub Action is referenced by release tag (for example `VenusOne-Lee/popia-compliance@v1.0.0`). A floating `v1` tag will follow.
 
 ## Neutrality
 

@@ -21,7 +21,7 @@ jobs:
 
       - name: POPIA scan
         id: popia
-        uses: VenusOne-Lee/popia-compliance@v1
+        uses: VenusOne-Lee/popia-compliance@v1.0.0
         with:
           path: .
           fail-on: high
