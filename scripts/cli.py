@@ -33,7 +33,7 @@ HERE = Path(__file__).resolve().parent
 if str(HERE) not in sys.path:
     sys.path.insert(0, str(HERE))
 
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 
 COMMANDS = {
     "scan": ("popia_scan", "Scan a codebase for POPIA and security risks"),
