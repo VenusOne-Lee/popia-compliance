@@ -120,6 +120,10 @@ class SiteUnreadable(RuntimeError):
                "the site answered with an error instead of its page, so nothing was checked")
         super().__init__(f"{msg} (HTTP {status})")
 
+    hint = ("Scan your code instead, bot protection does not affect it: popia-kit scan . "
+            "Or add the POPIA Kit skill to your AI tool: "
+            "https://github.com/VenusOne-Lee/popia-compliance#whats-inside")
+
 
 # Only page titles and mitigation headers: challenge scripts also load on normal pages, so they prove nothing.
 _CHALLENGE_HEADERS = (("x-vercel-mitigated", re.compile(r"challenge|deny", re.I)),
@@ -480,7 +484,7 @@ def main(argv=None) -> int:
         print(f"site_check: refused: {e}", file=sys.stderr)
         return 2
     except SiteUnreadable as e:
-        print(f"site_check: {e}", file=sys.stderr)
+        print(f"site_check: {e}\n{e.hint}", file=sys.stderr)
         return 2
     except Exception as e:  # network errors, TLS failures; never echo URL or message (may hold tokens)
         print(f"site_check: could not fetch the site ({type(e).__name__})", file=sys.stderr)

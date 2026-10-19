@@ -6,6 +6,9 @@ Legal content merged without a legal reviewer is marked `pending legal review` (
 
 ## [Unreleased]
 
+### Changed
+- When the site check cannot read a site, the CLI and MCP tool now point to the code scanner and the AI skill, which bot protection does not affect.
+
 ## [1.2.0] - 2026-10-19
 
 ### Added
