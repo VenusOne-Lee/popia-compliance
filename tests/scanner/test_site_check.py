@@ -1,5 +1,6 @@
 """site_check against a local server. No external network."""
 import sys
+import os
 import threading
 import unittest
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -105,6 +106,15 @@ class UnreadableSiteTest(unittest.TestCase):
             self.assertEqual(ctx.exception.reason, reason, path)
             self.assertIn("nothing was checked", str(ctx.exception))
             self.assertIn("popia-kit scan .", ctx.exception.hint)
+            self.assertIn(site_check.BOT_INFO_URL, ctx.exception.hint)
+
+    def test_user_agent_names_the_checker_and_links_its_page(self):
+        # Site owners allowlist or block on this token, so it must not change.
+        self.assertTrue(site_check.UA.startswith("popia-site-check/"))
+        self.assertIn(site_check.BOT_INFO_URL, site_check.UA)
+        page = os.path.join(os.path.dirname(__file__), "..", "..", "docs", "site-check-bot.md")
+        with open(page, encoding="utf-8") as f:
+            self.assertIn(site_check.UA, f.read())
 
     def test_javascript_page_reports_unknown_not_missing(self):
         res = site_check.check(self.base + "/spa", timeout=5, probe_paths=False)

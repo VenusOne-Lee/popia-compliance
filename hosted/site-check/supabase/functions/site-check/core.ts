@@ -16,7 +16,9 @@
 // ---------------------------------------------------------------- constants
 
 export const VERSION = "1.0.1-edge";
-const UA = "popia-site-check/1.0 (+https://github.com/VenusOne-Lee/popia-compliance; passive)";
+/** Explains the checker to site owners, and how to allow or block it. Linked from the User-Agent. */
+export const BOT_INFO_URL = "https://github.com/VenusOne-Lee/popia-compliance/blob/main/docs/site-check-bot.md";
+export const UA = `popia-site-check/1.0 (+${BOT_INFO_URL}; passive)`;
 export const SEV_ORDER = ["critical", "high", "medium", "low", "info"] as const;
 export type Severity = typeof SEV_ORDER[number];
 
@@ -156,7 +158,8 @@ export const ERROR_MESSAGES: Record<string, string> = {
   timeout: "The site took too long to respond.",
   too_many_redirects: "The site redirected too many times.",
   site_blocked: "The site showed a bot check instead of its page, so nothing was checked. " +
-    "Bot protection such as Vercel's or Cloudflare's can block automated checks.",
+    "Bot protection such as Vercel's or Cloudflare's can block automated checks. " +
+    "If it is your site, you can allow the checker for one check.",
   site_error: "The site answered with an error instead of its page, so nothing was checked.",
   internal_error: "Something went wrong.",
 };

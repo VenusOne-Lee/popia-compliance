@@ -1,6 +1,7 @@
 // Check logic: parity with tests/scanner/test_site_check.py and tests/security/test_hardening.py,
 // plus header, cookie, HTML and URL-sanitising cases.
 import {
+  BOT_INFO_URL,
   checkCookies,
   checkHeaders,
   checkHtml,
@@ -10,6 +11,7 @@ import {
   parseSetCookie,
   runSiteCheck,
   safeUrl,
+  UA,
 } from "../supabase/functions/site-check/core.ts";
 import { assert, assertEquals, fakeDns, makeCtx, mockFetch, publicDns } from "./helpers.ts";
 
@@ -391,4 +393,12 @@ Deno.test("safeUrl: credentials, query and fragment never appear", () => {
   ];
   for (const [inp, out] of cases) assertEquals(safeUrl(inp), out, inp);
   assertEquals(safeUrl("https://e.co.za/a/b", false), "https://e.co.za");
+});
+
+// ---------------------------------------------------------------- user agent
+
+// Same string as UA in scripts/site_check.py and docs/site-check-bot.md. Site owners allowlist or block on it.
+Deno.test("parity test_site_check: the user agent names the checker and links its page", () => {
+  assertEquals(BOT_INFO_URL, "https://github.com/VenusOne-Lee/popia-compliance/blob/main/docs/site-check-bot.md");
+  assertEquals(UA, `popia-site-check/1.0 (+${BOT_INFO_URL}; passive)`);
 });
