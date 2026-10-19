@@ -126,6 +126,11 @@
       "actions": ["Serve the login page and the whole site over HTTPS."],
       "kit": "security"
     },
+    "WEB-022": {
+      "why": "The page's first HTML has no links, so a passive check cannot see your notices. Some search engines and tools see the same empty page.",
+      "actions": ["Open the site in a browser and confirm the footer links the privacy notice and PAIA manual.", "Consider server rendering or prerendering so the links are in the first HTML."],
+      "kit": "pack"
+    },
     "WEB-021": {
       "why": "Personal information in an address ends up in browser history, server logs and other sites' referrer data.",
       "actions": ["Send personal information in the request body, not the address.", "Use opaque IDs in links."],

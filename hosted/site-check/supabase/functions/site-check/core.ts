@@ -155,6 +155,9 @@ export const ERROR_MESSAGES: Record<string, string> = {
   fetch_failed: "The site could not be reached.",
   timeout: "The site took too long to respond.",
   too_many_redirects: "The site redirected too many times.",
+  site_blocked: "The site showed a bot check instead of its page, so nothing was checked. " +
+    "Bot protection such as Vercel's or Cloudflare's can block automated checks.",
+  site_error: "The site answered with an error instead of its page, so nothing was checked.",
   internal_error: "Something went wrong.",
 };
 
@@ -949,11 +952,35 @@ export function checkCookies(h: Headers): { cookies: CookieInfo[]; findings: Fin
   return { cookies, findings };
 }
 
+/** true: found. false: not found. null: could not tell, because the page builds its content with JavaScript. */
 export interface Notices {
-  privacy: boolean;
-  paia: boolean;
-  cookie: boolean;
-  information_officer: boolean;
+  privacy: boolean | null;
+  paia: boolean | null;
+  cookie: boolean | null;
+  information_officer: boolean | null;
+}
+
+// Bot challenge pages that some hosts serve instead of the site. Checking them would grade the wrong page.
+// Only page titles and mitigation headers: challenge scripts also load on normal pages, so they prove nothing.
+const CHALLENGE_HEADERS: Array<[string, RegExp]> = [
+  ["x-vercel-mitigated", /challenge|deny/i],
+  ["cf-mitigated", /challenge/i],
+];
+const CHALLENGE_BODY = new RegExp(
+  [
+    "<title>\\s*vercel security checkpoint",
+    "<title>\\s*just a moment\\.\\.\\.",
+    "<title>\\s*attention required!? \\| cloudflare",
+    "<title>\\s*ddos-guard",
+    "incapsula incident id",
+  ].join("|"),
+  "i",
+);
+
+/** True when the response is a bot check page rather than the site itself. */
+export function isChallenge(headers: Headers, html: string): boolean {
+  if (CHALLENGE_HEADERS.some(([h, rx]) => rx.test(headers.get(h) ?? ""))) return true;
+  return CHALLENGE_BODY.test(html.slice(0, 65_536));
 }
 
 export interface HtmlResult {
@@ -1029,39 +1056,56 @@ export function checkHtml(html: string, finalUrl: string, probed: Partial<Notice
 
   const textAll = page.text.join(" ").toLowerCase();
   const hrefs = page.links.map((l) => [l.href.toLowerCase(), l.text.trim().toLowerCase()] as const);
-  const notices: Notices = {
-    privacy: hrefs.some(([hr, tx]) => hr.includes("privacy") || tx.includes("privacy")) || !!probed.privacy,
-    paia: hrefs.some(([hr, tx]) => hr.includes("paia") || tx.includes("paia") || tx.includes("access to information")) ||
-      !!probed.paia,
-    cookie: hrefs.some(([hr, tx]) => hr.includes("cookie") || tx.includes("cookie")) || !!probed.cookie,
-    information_officer: textAll.includes("information officer"),
-  };
+  // A page that builds its content with JavaScript has no links in its HTML. Absence proves nothing there.
   const spa = page.text.length < 40 && page.scripts.some((s) => s["type"] === "module");
-  if (!notices.privacy) {
+  const seen = (found: boolean): boolean | null => (found ? true : spa ? null : false);
+  const notices: Notices = {
+    privacy: seen(hrefs.some(([hr, tx]) => hr.includes("privacy") || tx.includes("privacy")) || !!probed.privacy),
+    paia: seen(
+      hrefs.some(([hr, tx]) => hr.includes("paia") || tx.includes("paia") || tx.includes("access to information")) ||
+        !!probed.paia,
+    ),
+    cookie: seen(hrefs.some(([hr, tx]) => hr.includes("cookie") || tx.includes("cookie")) || !!probed.cookie),
+    information_officer: seen(textAll.includes("information officer")),
+  };
+  if (spa && (notices.privacy === null || notices.paia === null)) {
+    findings.push(
+      f(
+        "WEB-022",
+        "Page builds its links with JavaScript",
+        "info",
+        "s18",
+        "Notices could not be checked: the first HTML has no links",
+        "Open the site in a browser and confirm the footer links the privacy notice and PAIA manual. " +
+          "Server rendering or prerendering makes them visible to search engines and checks.",
+      ),
+    );
+  }
+  if (notices.privacy === false) {
     findings.push(
       f(
         "WEB-015",
         "No privacy notice link found",
         "high",
         "s18",
-        "No link or common path" + (spa ? " (SPA: links may render client-side)" : ""),
+        "No link or common path",
         "Publish a privacy notice and link it in the footer and next to every form.",
       ),
     );
   }
-  if (!notices.paia) {
+  if (notices.paia === false) {
     findings.push(
       f(
         "WEB-016",
         "No PAIA manual link found",
         "medium",
         "PAIA s51",
-        "No PAIA link or common path" + (spa ? " (SPA: may render client-side)" : ""),
+        "No PAIA link or common path",
         "Publish the PAIA manual and link it in the footer.",
       ),
     );
   }
-  if (trackers.length && !notices.cookie) {
+  if (trackers.length && notices.cookie === false) {
     findings.push(
       f(
         "WEB-017",
@@ -1151,6 +1195,9 @@ export async function runSiteCheck(input: string, ctx: Ctx, opts: CheckOptions =
   const finalUrl = main.url;
   const final = new URL(finalUrl);
   const html = new TextDecoder("utf-8", { fatal: false }).decode(main.body);
+  // Grade only the site itself. A bot check or an error page would produce wrong findings.
+  if (isChallenge(main.headers, html)) throw new CheckError("site_blocked", 422);
+  if (main.status < 200 || main.status >= 300) throw new CheckError("site_error", 422);
   const base = `${final.protocol}//${final.host}`;
 
   // Extra probes, all through the guarded fetch, run in parallel. A failed probe never fails the check.

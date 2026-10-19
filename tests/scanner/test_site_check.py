@@ -60,3 +60,60 @@ class SiteCheckTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+SHELL = b"""<!doctype html><html><head><script type="module" src="/assets/index.js"></script></head>
+<body><div id="root"></div></body></html>"""
+
+
+class Unreadable(BaseHTTPRequestHandler):
+    """Routes that must not be graded, plus a JavaScript-built page."""
+
+    def do_GET(self):
+        routes = {
+            "/vercel": (429, {"X-Vercel-Mitigated": "challenge", "Content-Type": "text/html"}, b"<html></html>"),
+            "/cf": (200, {"Content-Type": "text/html"}, b"<html><head><title>Just a moment...</title></head></html>"),
+            "/down": (500, {"Content-Type": "text/html"}, b"error"),
+            "/spa": (200, {"Content-Type": "text/html"}, SHELL),
+        }
+        st, headers, body = routes.get(self.path.split("?")[0], (404, {}, b""))
+        self.send_response(st)
+        for k, v in headers.items():
+            self.send_header(k, v)
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, *a):
+        pass
+
+
+class UnreadableSiteTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.srv = HTTPServer(("127.0.0.1", 0), Unreadable)
+        threading.Thread(target=cls.srv.serve_forever, daemon=True).start()
+        cls.base = f"http://127.0.0.1:{cls.srv.server_port}"
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.srv.shutdown()
+
+    def test_bot_checks_and_errors_are_not_graded(self):
+        for path, reason in (("/vercel", "blocked"), ("/cf", "blocked"), ("/down", "error")):
+            with self.assertRaises(site_check.SiteUnreadable) as ctx:
+                site_check.check(self.base + path, timeout=5, probe_paths=False)
+            self.assertEqual(ctx.exception.reason, reason, path)
+            self.assertIn("nothing was checked", str(ctx.exception))
+
+    def test_javascript_page_reports_unknown_not_missing(self):
+        res = site_check.check(self.base + "/spa", timeout=5, probe_paths=False)
+        self.assertEqual(res["notices"], {"privacy": None, "paia": None, "cookie": None, "information_officer": None})
+        got = [f["rule_id"] for f in res["findings"]]
+        self.assertIn("WEB-022", got)
+        self.assertNotIn("WEB-015", got)
+        self.assertNotIn("WEB-016", got)
+        self.assertIn("couldn't tell", site_check.fmt_md(res))
+
+    def test_challenge_detection_ignores_normal_pages(self):
+        self.assertFalse(site_check.is_challenge({}, '<title>Shop</title><script src="/cdn-cgi/challenge-platform/x.js">'))
+        self.assertTrue(site_check.is_challenge({"cf-mitigated": "challenge"}, ""))

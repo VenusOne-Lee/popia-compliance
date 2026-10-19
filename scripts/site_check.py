@@ -110,6 +110,32 @@ class BlockedTarget(ValueError):
     """Raised when a URL or redirect points somewhere site_check must not request."""
 
 
+class SiteUnreadable(RuntimeError):
+    """Raised when the site answers with a bot check or an error page. Grading that page would be wrong."""
+
+    def __init__(self, reason: str, status: int):
+        self.reason, self.status = reason, status
+        msg = ("the site showed a bot check instead of its page, so nothing was checked. Bot protection such as "
+               "Vercel's or Cloudflare's can block automated checks" if reason == "blocked" else
+               "the site answered with an error instead of its page, so nothing was checked")
+        super().__init__(f"{msg} (HTTP {status})")
+
+
+# Only page titles and mitigation headers: challenge scripts also load on normal pages, so they prove nothing.
+_CHALLENGE_HEADERS = (("x-vercel-mitigated", re.compile(r"challenge|deny", re.I)),
+                      ("cf-mitigated", re.compile(r"challenge", re.I)))
+_CHALLENGE_BODY = re.compile(
+    r"<title>\s*vercel security checkpoint|<title>\s*just a moment\.\.\.|"
+    r"<title>\s*attention required!? \| cloudflare|<title>\s*ddos-guard|incapsula incident id", re.I)
+
+
+def is_challenge(headers: dict, html: str) -> bool:
+    """True when the response is a bot check page rather than the site itself. headers: lower-case keys."""
+    if any(rx.search(headers.get(k, "") or "") for k, rx in _CHALLENGE_HEADERS):
+        return True
+    return bool(_CHALLENGE_BODY.search(html[:65536]))
+
+
 def _is_public_host(host: str) -> bool:
     """True only if every address the host resolves to is a public unicast address."""
     try:
@@ -208,6 +234,11 @@ def check(url: str, timeout: float = 15, probe_paths: bool = True, block_private
     except Exception:
         pass
     h = {k.lower(): v for k, v in headers.items()} if headers else {}
+    # Grade only the site itself. A bot check or an error page would produce wrong findings.
+    if is_challenge(h, html):
+        raise SiteUnreadable("blocked", status)
+    if not 200 <= status < 300:
+        raise SiteUnreadable("error", status)
 
     # ---- transport
     if parsed.scheme != "https":
@@ -350,16 +381,22 @@ def check(url: str, timeout: float = 15, probe_paths: bool = True, block_private
             has_sec_txt = False
     else:
         has_sec_txt = False
+    # A page that builds its content with JavaScript has no links in its HTML. Absence proves nothing there.
     spa = len(page.text) < 40 and any(s.get("type") == "module" for s in page.scripts)
-    if not notices["privacy"]:
-        findings.append(_f("WEB-015", "No privacy notice link found", "high", "s18",
-                           "No link or common path" + (" (SPA: links may render client-side)" if spa else ""),
+    if spa:
+        notices = {k: (True if v else None) for k, v in notices.items()}
+        if notices["privacy"] is None or notices["paia"] is None:
+            findings.append(_f("WEB-022", "Page builds its links with JavaScript", "info", "s18",
+                               "Notices could not be checked: the first HTML has no links",
+                               "Open the site in a browser and confirm the footer links the privacy notice and PAIA "
+                               "manual. Server rendering or prerendering makes them visible to search engines and checks."))
+    if notices["privacy"] is False:
+        findings.append(_f("WEB-015", "No privacy notice link found", "high", "s18", "No link or common path",
                            "Publish a privacy notice and link it in the footer and next to every form."))
-    if not notices["paia"]:
-        findings.append(_f("WEB-016", "No PAIA manual link found", "medium", "PAIA s51",
-                           "No PAIA link or common path" + (" (SPA: may render client-side)" if spa else ""),
+    if notices["paia"] is False:
+        findings.append(_f("WEB-016", "No PAIA manual link found", "medium", "PAIA s51", "No PAIA link or common path",
                            "Publish the PAIA manual and link it in the footer."))
-    if trackers and not notices["cookie"]:
+    if trackers and notices["cookie"] is False:
         findings.append(_f("WEB-017", "Trackers present but no cookie notice link", "medium", "s18",
                            "", "Publish a cookie notice listing each tool, purpose and provider."))
     if not has_sec_txt:
@@ -395,6 +432,10 @@ def check(url: str, timeout: float = 15, probe_paths: bool = True, block_private
     }
 
 
+def _mark(v) -> str:
+    return "✓" if v else ("✗" if v is False else "? (couldn't tell)")
+
+
 def fmt_md(res: dict) -> str:
     s = res["summary"]
     md = ["# POPIA site check", "",
@@ -402,8 +443,8 @@ def fmt_md(res: dict) -> str:
           f"- **Checked:** {res['checked_at']} · site_check {res['version']} · passive",
           f"- **Consent tool:** {res['consent_tool'] or 'none detected'} · Consent Mode default: {'yes' if res['consent_mode_default'] else 'no'}",
           f"- **Trackers in initial HTML:** {', '.join(res['trackers']) or 'none detected'}",
-          f"- **Notices:** privacy {'✓' if res['notices']['privacy'] else '✗'} · PAIA {'✓' if res['notices']['paia'] else '✗'} · "
-          f"cookies {'✓' if res['notices']['cookie'] else '✗'} · Information Officer named {'✓' if res['notices']['information_officer'] else '✗'}",
+          f"- **Notices:** privacy {_mark(res['notices']['privacy'])} · PAIA {_mark(res['notices']['paia'])} · "
+          f"cookies {_mark(res['notices']['cookie'])} · Information Officer named {_mark(res['notices']['information_officer'])}",
           ""]
     if res.get("spa_suspected"):
         md += ["> This looks like a single-page app. Links, banners and some trackers render in JavaScript, "
@@ -437,6 +478,9 @@ def main(argv=None) -> int:
         res = check(a.url, a.timeout, probe_paths=not a.no_probe, block_private=a.block_private)
     except BlockedTarget as e:
         print(f"site_check: refused: {e}", file=sys.stderr)
+        return 2
+    except SiteUnreadable as e:
+        print(f"site_check: {e}", file=sys.stderr)
         return 2
     except Exception as e:  # network errors, TLS failures; never echo URL or message (may hold tokens)
         print(f"site_check: could not fetch the site ({type(e).__name__})", file=sys.stderr)

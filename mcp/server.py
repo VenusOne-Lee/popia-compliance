@@ -458,6 +458,8 @@ def tool_popia_site_check(args: dict) -> str:
         res = sc.check(url, block_private=not allow_private)
     except getattr(sc, "BlockedTarget", ValueError) as e:
         raise ToolError(f"Refused: {e}.")
+    except getattr(sc, "SiteUnreadable", RuntimeError) as e:
+        raise ToolError(f"Not checked: {e}.")
     fmt_md = getattr(sc, "fmt_md", None)
     return fmt_md(res) if fmt_md else json.dumps(res, indent=2)
 
