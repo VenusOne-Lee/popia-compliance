@@ -36,7 +36,8 @@ from typing import Dict, List, Optional
 from urllib.parse import urljoin, urlparse
 
 __version__ = "1.0.1"
-UA = "popia-site-check/1.0 (+https://github.com/VenusOne-Lee/popia-compliance; passive)"
+BOT_INFO_URL = "https://github.com/VenusOne-Lee/popia-compliance/blob/main/docs/site-check-bot.md"
+UA = f"popia-site-check/1.0 (+{BOT_INFO_URL}; passive)"
 SEV_ORDER = ["critical", "high", "medium", "low", "info"]
 
 TRACKER_DOMAINS = {
@@ -122,7 +123,8 @@ class SiteUnreadable(RuntimeError):
 
     hint = ("Scan your code instead, bot protection does not affect it: popia-kit scan . "
             "Or add the POPIA Kit skill to your AI tool: "
-            "https://github.com/VenusOne-Lee/popia-compliance#whats-inside")
+            "https://github.com/VenusOne-Lee/popia-compliance#whats-inside . "
+            "If it is your site, you can allow the checker for one check: " + BOT_INFO_URL)
 
 
 # Only page titles and mitigation headers: challenge scripts also load on normal pages, so they prove nothing.

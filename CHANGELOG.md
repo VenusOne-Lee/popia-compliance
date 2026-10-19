@@ -7,10 +7,12 @@ Legal content merged without a legal reviewer is marked `pending legal review` (
 ## [Unreleased]
 
 ### Added
+- A page for site owners on the site checker: what it requests, that it stops at bot protection, and how to allow it for one check or block it (`docs/site-check-bot.md`).
 - A false positive issue template, so reports name the rule, a small example and the expected result.
 
 ### Changed
 - When the site check cannot read a site, the CLI and MCP tool now point to the code scanner and the AI skill, which bot protection does not affect.
+- The site check User-Agent now links to the page for site owners, and the blocked message says the site owner can allow the checker for one check. The `popia-site-check/` token is unchanged.
 - README and quickstart link to popiakit.co.za and the browser site check, and the README has PyPI, CI, licence and site check badges.
 - PyPI metadata: links to the project site, site check, changelog, docs and security policy, plus classifiers for Python 3.8 to 3.12, the MIT licence and OS independence.
 
