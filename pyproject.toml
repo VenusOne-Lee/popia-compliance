@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "popia-kit"
-version = "1.1.0"
-description = "POPIA Kit: scanner, site check, compliance pack generator and MCP server for South African builders. Engineering guidance, not legal advice."
+version = "1.2.0"
+description = "POPIA Kit: scanner, site check, Supabase check, compliance pack generator and MCP server for South African builders. Engineering guidance, not legal advice."
 readme = "README.md"
 requires-python = ">=3.8"
 license = {text = "MIT (code); CC BY 4.0 (guidance and templates)"}
