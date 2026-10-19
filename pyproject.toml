@@ -27,6 +27,7 @@ Issues = "https://github.com/VenusOne-Lee/popia-compliance/issues"
 popia-kit = "popia_kit.cli:main"
 popia-scan = "popia_kit.cli:run_scan"
 popia-site-check = "popia_kit.cli:run_site_check"
+popia-supabase = "popia_kit.cli:run_supabase"
 popia-pack = "popia_kit.cli:run_pack"
 popia-badge = "popia_kit.cli:run_badge"
 popia-mcp = "popia_kit.cli:run_mcp"
@@ -52,6 +53,7 @@ include-package-data = false
 "popia_kit.data.templates" = "templates"
 
 [tool.setuptools.package-data]
+"popia_kit" = ["sql/*.sql"]
 "popia_kit.mcp" = ["tools.json"]
 "popia_kit.data.references" = ["*.md"]
 "popia_kit.data.packs" = ["*.md"]
