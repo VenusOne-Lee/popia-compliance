@@ -104,6 +104,7 @@ class UnreadableSiteTest(unittest.TestCase):
                 site_check.check(self.base + path, timeout=5, probe_paths=False)
             self.assertEqual(ctx.exception.reason, reason, path)
             self.assertIn("nothing was checked", str(ctx.exception))
+            self.assertIn("popia-kit scan .", ctx.exception.hint)
 
     def test_javascript_page_reports_unknown_not_missing(self):
         res = site_check.check(self.base + "/spa", timeout=5, probe_paths=False)

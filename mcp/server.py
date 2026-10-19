@@ -459,7 +459,7 @@ def tool_popia_site_check(args: dict) -> str:
     except getattr(sc, "BlockedTarget", ValueError) as e:
         raise ToolError(f"Refused: {e}.")
     except getattr(sc, "SiteUnreadable", RuntimeError) as e:
-        raise ToolError(f"Not checked: {e}.")
+        raise ToolError(f"Not checked: {e}. " + getattr(e, "hint", ""))
     fmt_md = getattr(sc, "fmt_md", None)
     return fmt_md(res) if fmt_md else json.dumps(res, indent=2)
 
