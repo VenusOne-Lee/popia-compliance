@@ -87,6 +87,8 @@ jobs:
         working-directory: /tmp
         run: |
           /tmp/pk/bin/popia-kit version
+          mkdir -p /tmp/init-test/.cursor && /tmp/pk/bin/popia-kit init /tmp/init-test
+          test -f /tmp/init-test/.cursor/rules/popia.mdc && test -f /tmp/init-test/.github/workflows/popia-scan.yml
           /tmp/pk/bin/popia-kit scan "$GITHUB_WORKSPACE/tests/fixtures/demo-app" --format json --out /tmp/scan.json || true
           python -c "import json; r=json.load(open('/tmp/scan.json')); assert r['files_scanned'] > 0 and len(r['findings']) > 0, r['summary']"
           /tmp/pk/bin/popia-kit pack --example /tmp/ex.json
@@ -103,6 +105,8 @@ jobs:
           npm pack --pack-destination /tmp
           cd /tmp && npx -y ./popia-kit-*.tgz version && npx -y ./popia-kit-*.tgz scan "$GITHUB_WORKSPACE/tests/fixtures/demo-app" > /tmp/npx-scan.txt || true
           grep -q "summary:" /tmp/npx-scan.txt
+          mkdir -p /tmp/npx-init && npx -y ./popia-kit-*.tgz init /tmp/npx-init --tools cursor
+          test -f /tmp/npx-init/.cursor/rules/popia.mdc
 
   action:
     name: GitHub Action (one scan, baseline)

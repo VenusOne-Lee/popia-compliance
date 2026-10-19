@@ -2,6 +2,7 @@
 """
 popia-kit: one entry point for the POPIA Kit tools.
 
+    popia-kit init                           set up rules files, a scan workflow and .popiaignore
     popia-kit scan ./my-app                  code scanner (43 rules)
     popia-kit site-check https://example.com passive live site check
     popia-kit supabase sql                   read-only Supabase database check
@@ -36,6 +37,7 @@ if str(HERE) not in sys.path:
 VERSION = "1.2.0"
 
 COMMANDS = {
+    "init": ("popia_init", "Set up POPIA Kit in a project"),
     "scan": ("popia_scan", "Scan a codebase for POPIA and security risks"),
     "site-check": ("site_check", "Passive check of a live website"),
     "supabase": ("supabase_check", "Read-only check of a Supabase database"),
@@ -90,6 +92,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     if cmd == "id":
         return int(module._main(["popia-kit id"] + rest) or 0)
     return int(module.main(rest) or 0)
+
+
+def run_init() -> int:
+    return main(["init"] + sys.argv[1:])
 
 
 def run_scan() -> int:

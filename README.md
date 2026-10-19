@@ -72,7 +72,10 @@ To keep it installed: `pipx install popia-kit`, then use `popia-kit` anywhere. F
 
 | Command | What it does |
 |---|---|
+| `popia-kit init` | Set up a project: the POPIA rules file for each AI tool you use, a GitHub workflow that runs the scan, and a starter `.popiaignore`. Never overwrites your own content |
 | `popia-kit scan ./my-app --format md --out popia-scan.md` | Scan a codebase (43 rules). Also `--format json` or `--format sarif` |
+| `popia-kit scan . --write-baseline popia-baseline.json` | Record today's findings, then `--baseline popia-baseline.json` reports only new ones |
+| `popia-kit scan . --changed-since origin/main` | Report only findings in files changed since a branch |
 | `popia-kit site-check https://example.co.za --out site-check.md` | Passive check of a live site you own |
 | `popia-kit supabase sql` then `popia-kit supabase check result.json` | Read-only check of a Supabase database. Reads settings, never data |
 | `popia-kit pack --interactive --out ./compliance-pack` | Answer questions, get draft notices, PAIA manual, ROPA and more |

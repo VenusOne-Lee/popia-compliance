@@ -101,7 +101,14 @@ uvx popia-kit supabase check result.json --format md --out supabase-check.md
 
 With `psql` installed you can skip the copy and paste: set `SUPABASE_DB_URL` to the connection string from Project settings, Database, then run `uvx popia-kit supabase run`. The session is read-only.
 
-**6. Stop it coming back.** Add the GitHub Action from path 1, step 5, or the pre-commit hook in [docs/automation.md](automation.md).
+**6. Stop it coming back.** Set up the rules file for your AI tool and a scan workflow in one go:
+
+```bash
+uvx popia-kit init
+uvx popia-kit scan . --write-baseline popia-baseline.json
+```
+
+`init` finds the AI tools you use (Claude Code, Cursor, Copilot, Windsurf, Gemini, AGENTS.md) and adds the POPIA rules for each, plus `.github/workflows/popia-scan.yml` and `.popiaignore`. It adds a marked block to files you already have, such as `CLAUDE.md`, and keeps the rest. The baseline lets CI fail only on new findings while you work through the old ones: set `baseline: popia-baseline.json` on the action. The pre-commit hook is in [docs/automation.md](automation.md).
 
 **7. Fill the gaps the scanner can't see:** Information Officer registration, privacy notice content, PAIA manual, operator agreements, retention, breach plan. The compliance pack drafts most of them: path 1, step 6.
 
