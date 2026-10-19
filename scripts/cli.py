@@ -4,6 +4,7 @@ popia-kit: one entry point for the POPIA Kit tools.
 
     popia-kit scan ./my-app                  code scanner (43 rules)
     popia-kit site-check https://example.com passive live site check
+    popia-kit supabase sql                   read-only Supabase database check
     popia-kit pack --interactive             draft compliance pack
     popia-kit badge popia-scan.json          dated status badge
     popia-kit id validate <id number>        SA ID number helpers
@@ -37,6 +38,7 @@ VERSION = "1.1.0"
 COMMANDS = {
     "scan": ("popia_scan", "Scan a codebase for POPIA and security risks"),
     "site-check": ("site_check", "Passive check of a live website"),
+    "supabase": ("supabase_check", "Read-only check of a Supabase database"),
     "pack": ("popia_pack", "Generate a draft compliance pack"),
     "badge": ("popia_badge", "Build a dated badge from a scan result"),
     "id": ("sa_id", "Validate, parse or mask an SA ID number"),
@@ -96,6 +98,10 @@ def run_scan() -> int:
 
 def run_site_check() -> int:
     return main(["site-check"] + sys.argv[1:])
+
+
+def run_supabase() -> int:
+    return main(["supabase"] + sys.argv[1:])
 
 
 def run_pack() -> int:

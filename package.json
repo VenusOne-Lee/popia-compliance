@@ -10,6 +10,7 @@
   "files": [
     "bin/",
     "scripts/*.py",
+    "scripts/sql/*.sql",
     "scripts/rules/*.py",
     "mcp/*.py",
     "mcp/tools.json",

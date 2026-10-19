@@ -1,0 +1,217 @@
+{
+ "popia_kit_inventory": {
+  "tool": "popia-kit supabase inventory",
+  "version": 1,
+  "postgres": "17.11",
+  "exposed_schemas": [
+   "public",
+   "storage",
+   "graphql_public",
+   "privacy"
+  ],
+  "relations": [
+   {
+    "schema": "privacy",
+    "name": "consent_events",
+    "kind": "r",
+    "rls": true,
+    "rls_forced": true,
+    "security_invoker": false,
+    "anon_select": false,
+    "anon_write": false,
+    "auth_select": true,
+    "auth_write": false,
+    "columns": [
+     "id",
+     "subject_id",
+     "purpose",
+     "action",
+     "ip_hash",
+     "created_at"
+    ],
+    "reads_auth_users": false
+   },
+   {
+    "schema": "privacy",
+    "name": "consent_current",
+    "kind": "v",
+    "rls": false,
+    "rls_forced": false,
+    "security_invoker": true,
+    "anon_select": false,
+    "anon_write": false,
+    "auth_select": true,
+    "auth_write": false,
+    "columns": [
+     "subject_id",
+     "purpose",
+     "action"
+    ],
+    "reads_auth_users": false
+   },
+   {
+    "schema": "privacy",
+    "name": "dsar_requests",
+    "kind": "r",
+    "rls": true,
+    "rls_forced": true,
+    "security_invoker": false,
+    "anon_select": false,
+    "anon_write": false,
+    "auth_select": true,
+    "auth_write": false,
+    "columns": [
+     "id",
+     "subject_id",
+     "type",
+     "status"
+    ],
+    "reads_auth_users": false
+   },
+   {
+    "schema": "public",
+    "name": "newsletter_signups",
+    "kind": "r",
+    "rls": true,
+    "rls_forced": false,
+    "security_invoker": false,
+    "anon_select": true,
+    "anon_write": true,
+    "auth_select": true,
+    "auth_write": true,
+    "columns": [
+     "id",
+     "name",
+     "email",
+     "created_at"
+    ],
+    "reads_auth_users": false
+   },
+   {
+    "schema": "public",
+    "name": "profiles",
+    "kind": "r",
+    "rls": true,
+    "rls_forced": false,
+    "security_invoker": false,
+    "anon_select": true,
+    "anon_write": true,
+    "auth_select": true,
+    "auth_write": true,
+    "columns": [
+     "id",
+     "display_name",
+     "mobile_number",
+     "created_at"
+    ],
+    "reads_auth_users": false
+   },
+   {
+    "schema": "storage",
+    "name": "objects",
+    "kind": "r",
+    "rls": true,
+    "rls_forced": false,
+    "security_invoker": false,
+    "anon_select": true,
+    "anon_write": true,
+    "auth_select": true,
+    "auth_write": true,
+    "columns": [
+     "id",
+     "bucket_id",
+     "name",
+     "owner"
+    ],
+    "reads_auth_users": false
+   }
+  ],
+  "functions": [
+   {
+    "schema": "graphql_public",
+    "name": "graphql",
+    "args": "\"operationName\" text, query text, variables jsonb, extensions jsonb",
+    "security_definer": false,
+    "fixed_search_path": false,
+    "anon_execute": true,
+    "auth_execute": true
+   },
+   {
+    "schema": "privacy",
+    "name": "redact_consent_events",
+    "args": "p_subject uuid",
+    "security_definer": true,
+    "fixed_search_path": true,
+    "anon_execute": false,
+    "auth_execute": false
+   },
+   {
+    "schema": "privacy",
+    "name": "security_report",
+    "args": "",
+    "security_definer": true,
+    "fixed_search_path": true,
+    "anon_execute": false,
+    "auth_execute": false
+   },
+   {
+    "schema": "public",
+    "name": "reserve_privacy_export",
+    "args": "p_subject uuid, p_max integer",
+    "security_definer": false,
+    "fixed_search_path": true,
+    "anon_execute": false,
+    "auth_execute": false
+   },
+   {
+    "schema": "storage",
+    "name": "search",
+    "args": "prefix text",
+    "security_definer": false,
+    "fixed_search_path": false,
+    "anon_execute": true,
+    "auth_execute": true
+   }
+  ],
+  "policies": [
+   {
+    "schema": "privacy",
+    "table": "consent_events",
+    "name": "consent: read own",
+    "permissive": "PERMISSIVE",
+    "roles": [
+     "authenticated"
+    ],
+    "cmd": "SELECT",
+    "using": "(( SELECT auth.uid() AS uid) = subject_id)",
+    "with_check": null
+   },
+   {
+    "schema": "public",
+    "table": "newsletter_signups",
+    "name": "Anyone can sign up",
+    "permissive": "PERMISSIVE",
+    "roles": [
+     "anon",
+     "authenticated"
+    ],
+    "cmd": "INSERT",
+    "using": null,
+    "with_check": "true"
+   },
+   {
+    "schema": "public",
+    "table": "profiles",
+    "name": "Own profile select",
+    "permissive": "PERMISSIVE",
+    "roles": [
+     "authenticated"
+    ],
+    "cmd": "SELECT",
+    "using": "(auth.uid() = id)",
+    "with_check": null
+   }
+  ],
+  "buckets": []
+ }
+}

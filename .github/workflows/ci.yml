@@ -90,6 +90,8 @@ jobs:
           /tmp/pk/bin/popia-kit pack --answers /tmp/ex.json --out /tmp/pack
           test -f /tmp/pack/privacy-notice.md
           /tmp/pk/bin/popia-kit badge /tmp/scan.json --out /tmp/badge.svg
+          /tmp/pk/bin/popia-kit supabase sql | grep -q popia_kit_inventory
+          /tmp/pk/bin/popia-kit supabase check "$GITHUB_WORKSPACE/tests/fixtures/supabase/seeded-risky.json" --fail-on high && exit 1 || test $? -eq 1
           printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"ci","version":"1"}}}' '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' | /tmp/pk/bin/popia-kit mcp > /tmp/mcp.out
           python -c "import json; r=[json.loads(l) for l in open('/tmp/mcp.out')]; assert len(r[1]['result']['tools']) == 8, r"
 
@@ -98,6 +100,19 @@ jobs:
           npm pack --pack-destination /tmp
           cd /tmp && npx -y ./popia-kit-*.tgz version && npx -y ./popia-kit-*.tgz scan "$GITHUB_WORKSPACE/tests/fixtures/demo-app" > /tmp/npx-scan.txt || true
           grep -q "summary:" /tmp/npx-scan.txt
+
+  supabase:
+    name: Supabase check SQL on a throwaway Postgres
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Inventory query, rules and read-only session
+        run: sudo -E env "PATH=$PATH" bash tests/supabase/run_live.sh
 
   site-check:
     name: Hosted site check (Deno, Node, SQL)

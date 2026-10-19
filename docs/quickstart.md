@@ -85,9 +85,23 @@ No `uv`? Use `pipx run popia-kit scan .` or `npx -y github:VenusOne-Lee/popia-co
 uvx popia-kit site-check https://your-site.co.za --out site-check.md
 ```
 
-**5. Stop it coming back.** Add the GitHub Action from path 1, step 5, or the pre-commit hook in [docs/automation.md](automation.md).
+**5. Check the database** if you use Supabase. The scanner reads your migrations. This reads the live settings: tables open to the anon key, policies that let everyone in, views over `auth.users`, exposed functions and public buckets. It reads the system catalogs only, never your data, and changes nothing.
 
-**6. Fill the gaps the scanner can't see:** Information Officer registration, privacy notice content, PAIA manual, operator agreements, retention, breach plan. The compliance pack drafts most of them: path 1, step 6.
+```bash
+uvx popia-kit supabase sql > inventory.sql
+```
+
+Paste `inventory.sql` into the Supabase SQL editor and run it. Save the single value it returns as `result.json` (a CSV download works too), then:
+
+```bash
+uvx popia-kit supabase check result.json --format md --out supabase-check.md
+```
+
+With `psql` installed you can skip the copy and paste: set `SUPABASE_DB_URL` to the connection string from Project settings, Database, then run `uvx popia-kit supabase run`. The session is read-only.
+
+**6. Stop it coming back.** Add the GitHub Action from path 1, step 5, or the pre-commit hook in [docs/automation.md](automation.md).
+
+**7. Fill the gaps the scanner can't see:** Information Officer registration, privacy notice content, PAIA manual, operator agreements, retention, breach plan. The compliance pack drafts most of them: path 1, step 6.
 
 ---
 
@@ -106,6 +120,8 @@ select * from privacy.security_report();
 ```
 
 You should see no critical or high rows. If you see `definer_function_exposed`, the migration step skipped a revoke: apply `0004_function_guards.sql` from the registry again.
+
+That report covers the privacy schema. To check every table Lovable made, ask Lovable to run the query from `uvx popia-kit supabase sql` and give you the result, then run `uvx popia-kit supabase check result.json`. On our test app it found only the expected newsletter sign-up insert.
 
 **4. Privacy centre endpoints.** Lovable's current default stack (TanStack Start) does not create Supabase Edge Functions. The prompt asks Lovable to create the same four endpoints as server routes under `/api/privacy/`. Add the secrets it asks for (`ALLOWED_ORIGINS`, `CONSENT_IP_SALT`, `UNSUBSCRIBE_SECRET`) in the Lovable editor.
 
