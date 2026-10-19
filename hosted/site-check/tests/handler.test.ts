@@ -324,6 +324,21 @@ Deno.test("errors: DNS failure and redirect loops", async () => {
   const r2 = await call(s2, post({ url: "https://example.co.za/" }));
   isError(r2.body, "too_many_redirects");
 });
+Deno.test("errors: bot checks and error pages are not graded", async () => {
+  const cases: Array<[Route, string]> = [
+    [() => new Response("<html></html>", { status: 429, headers: { "x-vercel-mitigated": "challenge" } }), "site_blocked"],
+    [() => new Response("", { status: 403, headers: { "cf-mitigated": "challenge" } }), "site_blocked"],
+    [html("<html><head><title>Just a moment...</title></head></html>"), "site_blocked"],
+    [() => new Response("nope", { status: 500, headers: { "content-type": "text/html" } }), "site_error"],
+    [() => new Response("", { status: 401 }), "site_error"],
+  ];
+  for (const [route, type] of cases) {
+    const s = setup({ routes: { "https://example.co.za/": route } });
+    const { res, body } = await call(s, post({ url: "https://example.co.za/" }));
+    assertEquals(res.status, 422);
+    isError(body, type);
+  }
+});
 Deno.test("success: response shape, headers and a clean site", async () => {
   const s = setup();
   const { res, body } = await call(s, post({ url: "https://user:pw@example.co.za/#x" }));

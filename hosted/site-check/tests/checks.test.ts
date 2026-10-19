@@ -5,6 +5,7 @@ import {
   checkHeaders,
   checkHtml,
   DISCLAIMER,
+  isChallenge,
   parseHtml,
   parseSetCookie,
   runSiteCheck,
@@ -292,14 +293,26 @@ Deno.test("html: probed notice paths count as found", () => {
   const r = checkHtml(`<p>hi</p>`, BASE, { privacy: true, paia: true });
   assertEquals([r.notices.privacy, r.notices.paia, r.notices.cookie], [true, true, false]);
 });
-Deno.test("html: SPA shells get the client-side rendering note", () => {
-  const r = checkHtml(
-    `<!doctype html><html><head><script type="module" src="/assets/index.js"></script></head>
-    <body><div id="root"></div></body></html>`,
-    BASE,
-  );
+Deno.test("html: SPA shells report notices as unknown, not missing", () => {
+  const shell = `<!doctype html><html><head><script type="module" src="/assets/index.js"></script></head>
+    <body><div id="root"></div></body></html>`;
+  const r = checkHtml(shell, BASE);
   assertEquals(r.spa, true);
-  assert(r.findings.find((f) => f.rule_id === "WEB-015")!.evidence.includes("SPA: links may render client-side"));
+  assertEquals(r.notices, { privacy: null, paia: null, cookie: null, information_officer: null });
+  assertEquals(ids(r.findings).filter((x) => /WEB-01[567]|WEB-022/.test(x)), ["WEB-022"]);
+  assertEquals(r.findings.find((f) => f.rule_id === "WEB-022")!.severity, "info");
+  const probed = checkHtml(shell, BASE, { privacy: true });
+  assertEquals([probed.notices.privacy, probed.notices.paia], [true, null]);
+});
+Deno.test("challenge: bot check pages and mitigation headers are detected", () => {
+  const h = (o: Record<string, string> = {}) => new Headers(o);
+  assert(isChallenge(h({ "x-vercel-mitigated": "challenge" }), ""));
+  assert(isChallenge(h({ "cf-mitigated": "challenge" }), ""));
+  assert(isChallenge(h(), "<html><head><title>Vercel Security Checkpoint</title>"));
+  assert(isChallenge(h(), "<html><head><title>Just a moment...</title>"));
+  assert(isChallenge(h(), "<title>Attention Required! | Cloudflare</title>"));
+  assert(!isChallenge(h(), `<title>Shop</title><script src="/cdn-cgi/challenge-platform/scripts/jsd/main.js"></script>`));
+  assert(!isChallenge(h({ server: "Vercel" }), "<title>Privacy matters</title>"));
 });
 Deno.test("html: pre-ticked checkboxes", () => {
   const cases: Array<[string, boolean]> = [
