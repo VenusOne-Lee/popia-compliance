@@ -1,5 +1,7 @@
 # POPIA Compliance Skill
 
+[![PyPI](https://img.shields.io/pypi/v/popia-kit)](https://pypi.org/project/popia-kit/) [![CI](https://github.com/VenusOne-Lee/popia-compliance/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/VenusOne-Lee/popia-compliance/actions/workflows/ci.yml) [![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue)](LICENSE) [![Check a site in your browser](https://img.shields.io/badge/site%20check-popiakit.co.za-0a7d5a)](https://popiakit.co.za/check)
+
 **Privacy and security guardrails for South African builders, for every AI coding tool.**
 
 An open-source skill that helps you build websites and apps that respect POPIA (the Protection of Personal Information Act) and prove it: a skill your AI tools load, a scanner that finds problems in your code, drop-in components that fix the common ones, and the documents an Information Officer needs.
@@ -32,6 +34,8 @@ Law current to **18 October 2026**. See [regulatory watch](references/10-regulat
 ## Start here
 
 New project, existing codebase or Lovable: [docs/quickstart.md](docs/quickstart.md) has a short path for each.
+
+**No install:** check a live site you own in your browser at [popiakit.co.za/check](https://popiakit.co.za/check). It runs the same passive site check as `popia-kit site-check`, and you can download the report as a PDF. Project site: [popiakit.co.za](https://popiakit.co.za).
 
 ## Install
 
@@ -122,6 +126,8 @@ Every finding and checklist item maps to one of POPIA's eight conditions (accoun
 The law changes, enforcement evolves and builders find new ways to leak data. Help keep this current:
 
 - **Report a law change:** open a [law-change issue](.github/ISSUE_TEMPLATE/law-change.yml). A monthly automated watch of the Regulator's site opens these too.
+- **Report a false positive:** open a [false positive issue](.github/ISSUE_TEMPLATE/false-positive.yml) with the rule ID and a small example.
+- **First time here:** look for issues labelled [good first issue](https://github.com/VenusOne-Lee/popia-compliance/labels/good%20first%20issue).
 - **Add a scanner rule, component, pack or translation:** see [CONTRIBUTING.md](CONTRIBUTING.md).
 - **Attorneys and privacy professionals:** the legal reviewer seat is open. Small, focused reviews, credited by name, and a review is not legal advice to users. Email **popiakit@venusone.africa** or see [GOVERNANCE.md](GOVERNANCE.md#reviewer-terms).
 

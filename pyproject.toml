@@ -10,17 +10,34 @@ readme = "README.md"
 requires-python = ">=3.8"
 license = {text = "MIT (code); CC BY 4.0 (guidance and templates)"}
 authors = [{name = "Venus ARC (Pty) Ltd, trading as Venus One"}]
-keywords = ["popia", "privacy", "south africa", "security", "compliance", "scanner", "mcp"]
+keywords = ["popia", "privacy", "south africa", "data protection", "security", "compliance", "scanner", "supabase", "mcp"]
 classifiers = [
+  "Development Status :: 5 - Production/Stable",
   "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Operating System :: OS Independent",
   "Environment :: Console",
   "Intended Audience :: Developers",
+  "Intended Audience :: Information Technology",
+  "License :: OSI Approved :: MIT License",
+  "Natural Language :: English",
   "Topic :: Security",
+  "Topic :: Software Development :: Quality Assurance",
 ]
 dependencies = []
 
 [project.urls]
-Homepage = "https://github.com/VenusOne-Lee/popia-compliance"
+Homepage = "https://popiakit.co.za"
+"Site check" = "https://popiakit.co.za/check"
+Repository = "https://github.com/VenusOne-Lee/popia-compliance"
+Documentation = "https://github.com/VenusOne-Lee/popia-compliance/blob/main/docs/quickstart.md"
+Changelog = "https://github.com/VenusOne-Lee/popia-compliance/blob/main/CHANGELOG.md"
+Security = "https://github.com/VenusOne-Lee/popia-compliance/blob/main/SECURITY.md"
 Issues = "https://github.com/VenusOne-Lee/popia-compliance/issues"
 
 [project.scripts]
