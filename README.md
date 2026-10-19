@@ -8,6 +8,8 @@ An open-source skill that helps you build websites and apps that respect POPIA (
 
 Maintained by Venus One (Venus ARC (Pty) Ltd) and contributors.
 
+<!-- mcp-name: io.github.VenusOne-Lee/popia-kit -->
+
 > [!IMPORTANT]
 > **Engineering guidance, not legal advice.** This project has **no legal reviewer yet**. Content is researched from the Act, the Regulations and the Information Regulator's publications, but has not been reviewed by an attorney. A clean scan is not a compliance certificate. Read [DISCLAIMER.md](DISCLAIMER.md). Attorneys: [we'd like your help](GOVERNANCE.md#the-legal-reviewer-seat).
 
