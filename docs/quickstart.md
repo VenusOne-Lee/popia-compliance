@@ -12,6 +12,8 @@ Engineering guidance, not legal advice. A clean scan is not a compliance certifi
 
 All you need is Python 3.8 or newer. Node is only needed for the components.
 
+Only want to check a live site? Use [popiakit.co.za/check](https://popiakit.co.za/check) in your browser. Nothing to install.
+
 ---
 
 ## 1. New project

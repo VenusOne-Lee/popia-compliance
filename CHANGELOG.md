@@ -6,6 +6,13 @@ Legal content merged without a legal reviewer is marked `pending legal review` (
 
 ## [Unreleased]
 
+### Added
+- A false positive issue template, so reports name the rule, a small example and the expected result.
+
+### Changed
+- README and quickstart link to popiakit.co.za and the browser site check, and the README has PyPI, CI, licence and site check badges.
+- PyPI metadata: links to the project site, site check, changelog, docs and security policy, plus classifiers for Python 3.8 to 3.12, the MIT licence and OS independence.
+
 ## [1.2.0] - 2026-10-19
 
 ### Added
