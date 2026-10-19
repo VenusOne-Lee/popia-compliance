@@ -19,8 +19,8 @@ jobs:
     steps:
       - name: POPIA site check
         id: popia
-        # Replace @main with the commit SHA of a release that includes site-url, as for any action.
-        uses: VenusOne-Lee/popia-compliance@main
+        # Pinned to the commit that added site-url. Move to a release commit when one ships.
+        uses: VenusOne-Lee/popia-compliance@fd0b2e469ee3e9960540152f1f8cb123088b5821
         with:
           scan: "false"
           site-url: https://example.co.za/
