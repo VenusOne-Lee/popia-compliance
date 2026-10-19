@@ -10,6 +10,8 @@ Legal content merged without a legal reviewer is marked `pending legal review` (
 - `popia-kit supabase`: a read-only check of a live Supabase database. One catalog query (`popia-kit supabase sql`) that reads settings, never table data, and 11 rules: tables open to the anon key or to every signed-in user, `using (true)` policies, open inserts, views that skip row level security or read `auth.users`, materialized views, callable security definer functions, public buckets, foreign tables and extra exposed schemas. Severity rises when column names suggest personal information. Run the query in the SQL editor and `popia-kit supabase check result.json`, or `popia-kit supabase run` with psql, which uses a read-only session. CI runs it against a throwaway Postgres seeded with known risks.
 - `hosted/site-check/report/actions.json`: a proposed action, reason and POPIA Kit pointer for every site check finding, the title of each cited section, and report copy. A test checks it covers every rule.
 
+- Lovable workspace skill in `adapters/lovable/skill/SKILL.md`: the Lovable rules plus the read-only database check, so a Lovable project can run it and propose a migration. Generated from the core, the inventory query and the rule table, and CI checks it is current.
+
 ### Changed
 - popia-kit is on PyPI. Install commands are now `uvx popia-kit scan .`, `pipx run popia-kit scan .` and `pipx install popia-kit`.
 

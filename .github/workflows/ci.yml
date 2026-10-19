@@ -57,6 +57,9 @@ jobs:
       - name: Regwatch parser on fixture (offline)
         run: python3 scripts/regwatch.py --dry-run --offline-fixture tests/automation/fixtures/regulator-list.html
 
+      - name: Adapters match the core
+        run: python3 scripts/build_adapters.py --check
+
       - name: Style lint
         if: ${{ hashFiles('scripts/style_lint.py') != '' }}
         run: python3 scripts/style_lint.py

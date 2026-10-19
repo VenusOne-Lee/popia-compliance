@@ -111,6 +111,8 @@ Tested on 18 October 2026 in a fresh Lovable project with Lovable Cloud: the dat
 
 **1. Add the knowledge.** Paste [`adapters/lovable/knowledge.md`](../adapters/lovable/knowledge.md) into Project settings, Knowledge. Lovable then applies the rules on every change.
 
+Workspace admins can add it once for every project instead: create a workspace skill named `popia-kit` from [`adapters/lovable/skill/SKILL.md`](../adapters/lovable/skill/SKILL.md). It has the same rules plus the read-only database check, so you can ask Lovable "run the POPIA database check".
+
 **2. Install the components and database layer.** Paste the [Lovable prompt](../registry/README.md#lovable-prompt) into chat. Approve the database migrations when Lovable asks.
 
 **3. Check the database.** Ask Lovable to run this, or run it in the Cloud SQL editor:
@@ -121,7 +123,7 @@ select * from privacy.security_report();
 
 You should see no critical or high rows. If you see `definer_function_exposed`, the migration step skipped a revoke: apply `0004_function_guards.sql` from the registry again.
 
-That report covers the privacy schema. To check every table Lovable made, ask Lovable to run the query from `uvx popia-kit supabase sql` and give you the result, then run `uvx popia-kit supabase check result.json`. On our test app it found only the expected newsletter sign-up insert.
+That report covers the privacy schema. To check every table Lovable made, ask Lovable to "run the POPIA database check" if you added the workspace skill. Without it, ask Lovable to run the query from `uvx popia-kit supabase sql` and give you the result, then run `uvx popia-kit supabase check result.json`. On our test app it found only the expected newsletter sign-up insert.
 
 **4. Privacy centre endpoints.** Lovable's current default stack (TanStack Start) does not create Supabase Edge Functions. The prompt asks Lovable to create the same four endpoints as server routes under `/api/privacy/`. Add the secrets it asks for (`ALLOWED_ORIGINS`, `CONSENT_IP_SALT`, `UNSUBSCRIBE_SECRET`) in the Lovable editor.
 
