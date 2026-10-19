@@ -6,6 +6,10 @@ branding:
   color: "green"
 
 inputs:
+  scan:
+    description: "Run the code scan. Set to false to run only the live site check."
+    required: false
+    default: "true"
   path:
     description: "Path to scan, relative to the workspace."
     required: false
@@ -26,6 +30,22 @@ inputs:
     description: "Upload SARIF to GitHub code scanning. Needs permissions security-events: write."
     required: false
     default: "true"
+  baseline:
+    description: "Baseline file from 'popia-kit scan --write-baseline FILE'. Known findings are hidden and only new ones count."
+    required: false
+    default: ""
+  changed-since:
+    description: "Report only findings in files changed since this ref, for example origin/main. Check out with fetch-depth: 0."
+    required: false
+    default: ""
+  site-url:
+    description: "Also run the passive live site check on this URL. Use a site you own or may test."
+    required: false
+    default: ""
+  site-fail-on:
+    description: "Fail when the site check finds something at or above this severity: critical, high, medium, low, info or none."
+    required: false
+    default: "high"
   python-version:
     description: "Python version for the scanner (3.8 or later)."
     required: false
@@ -41,6 +61,12 @@ outputs:
   sarif-file:
     description: "Path to the SARIF file, if written."
     value: ${{ steps.scan.outputs.sarif_file }}
+  site-critical:
+    description: "Number of critical site check findings."
+    value: ${{ steps.site.outputs.critical }}
+  site-high:
+    description: "Number of high site check findings."
+    value: ${{ steps.site.outputs.high }}
 
 runs:
   using: "composite"
@@ -52,24 +78,30 @@ runs:
 
     - name: Run POPIA scan
       id: scan
+      if: ${{ inputs.scan == 'true' }}
       shell: bash
       env:
         POPIA_PATH: ${{ inputs.path }}
         POPIA_MIN_SEV: ${{ inputs.min-severity }}
         POPIA_SARIF: ${{ inputs.sarif }}
+        POPIA_BASELINE: ${{ inputs.baseline }}
+        POPIA_CHANGED_SINCE: ${{ inputs.changed-since }}
         POPIA_SCANNER: ${{ github.action_path }}/scripts/popia_scan.py
       run: |
         set -euo pipefail
         out="${RUNNER_TEMP:-/tmp}/popia"
         mkdir -p "$out"
-        python3 "$POPIA_SCANNER" "$POPIA_PATH" --min-severity "$POPIA_MIN_SEV" --format json --out "$out/popia-scan.json"
-        python3 "$POPIA_SCANNER" "$POPIA_PATH" --min-severity "$POPIA_MIN_SEV" --format md --out "$out/popia-scan.md"
+        args=("$POPIA_PATH" --min-severity "$POPIA_MIN_SEV" --format json --out "$out/popia-scan.json" --report "md=$out/popia-scan.md")
+        if [ -n "$POPIA_BASELINE" ]; then args+=(--baseline "$POPIA_BASELINE"); fi
+        if [ -n "$POPIA_CHANGED_SINCE" ]; then args+=(--changed-since "$POPIA_CHANGED_SINCE"); fi
         if [ "$POPIA_SARIF" = "true" ]; then
-          python3 "$POPIA_SCANNER" "$POPIA_PATH" --min-severity "$POPIA_MIN_SEV" --format sarif --out popia-scan.sarif
+          args+=(--report "sarif=popia-scan.sarif")
           echo "sarif_file=popia-scan.sarif" >> "$GITHUB_OUTPUT"
         else
           echo "sarif_file=" >> "$GITHUB_OUTPUT"
         fi
+        # One scan writes every report.
+        python3 "$POPIA_SCANNER" "${args[@]}"
         cat "$out/popia-scan.md" >> "$GITHUB_STEP_SUMMARY"
         python3 - "$out/popia-scan.json" >> "$GITHUB_OUTPUT" <<'PY'
         import json, sys
@@ -79,8 +111,32 @@ runs:
         PY
         echo "json_file=$out/popia-scan.json" >> "$GITHUB_OUTPUT"
 
+    - name: Run live site check
+      id: site
+      if: ${{ inputs.site-url != '' }}
+      shell: bash
+      env:
+        POPIA_SITE_URL: ${{ inputs.site-url }}
+        POPIA_SITE_CHECK: ${{ github.action_path }}/scripts/site_check.py
+      run: |
+        set -euo pipefail
+        out="${RUNNER_TEMP:-/tmp}/popia"
+        mkdir -p "$out"
+        if ! python3 "$POPIA_SITE_CHECK" "$POPIA_SITE_URL" --out "$out/site-check.md" --json "$out/site-check.json"; then
+          echo "::error::The site check could not read the site. See the log above."
+          exit 1
+        fi
+        cat "$out/site-check.md" >> "$GITHUB_STEP_SUMMARY"
+        python3 - "$out/site-check.json" >> "$GITHUB_OUTPUT" <<'PY'
+        import json, sys
+        s = json.load(open(sys.argv[1]))["summary"]
+        for k in ("critical", "high", "medium", "low", "info"):
+            print(f"{k}={s.get(k, 0)}")
+        PY
+        echo "json_file=$out/site-check.json" >> "$GITHUB_OUTPUT"
+
     - name: Upload SARIF to code scanning
-      if: ${{ inputs.sarif == 'true' && inputs.upload-sarif == 'true' }}
+      if: ${{ inputs.scan == 'true' && inputs.sarif == 'true' && inputs.upload-sarif == 'true' }}
       continue-on-error: true
       uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
       with:
@@ -88,6 +144,7 @@ runs:
         category: popia-scan
 
     - name: Apply fail-on threshold
+      if: ${{ inputs.scan == 'true' }}
       shell: bash
       env:
         POPIA_FAIL_ON: ${{ inputs.fail-on }}
@@ -110,4 +167,30 @@ runs:
             print(f"::error::POPIA scan found {detail} (fail-on: {level}). Triage each finding: see the job summary.")
             sys.exit(1)
         print(f"POPIA scan: no findings at or above {level}.")
+        PY
+
+    - name: Apply site-fail-on threshold
+      if: ${{ inputs.site-url != '' }}
+      shell: bash
+      env:
+        POPIA_FAIL_ON: ${{ inputs.site-fail-on }}
+        POPIA_JSON: ${{ steps.site.outputs.json_file }}
+      run: |
+        set -euo pipefail
+        python3 - <<'PY'
+        import json, os, sys
+        order = ["critical", "high", "medium", "low", "info"]
+        level = os.environ["POPIA_FAIL_ON"].strip().lower()
+        if level == "none":
+            sys.exit(0)
+        if level not in order:
+            print(f"::error::site-fail-on must be one of {order} or none, got {level}")
+            sys.exit(2)
+        s = json.load(open(os.environ["POPIA_JSON"]))["summary"]
+        hits = {k: s.get(k, 0) for k in order[: order.index(level) + 1] if s.get(k, 0)}
+        if hits:
+            detail = ", ".join(f"{v} {k}" for k, v in hits.items())
+            print(f"::error::Site check found {detail} (site-fail-on: {level}). Triage each finding: see the job summary.")
+            sys.exit(1)
+        print(f"Site check: no findings at or above {level}.")
         PY

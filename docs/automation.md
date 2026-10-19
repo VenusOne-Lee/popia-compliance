@@ -33,11 +33,16 @@ steps:
 
 | Input | Default | Meaning |
 |---|---|---|
+| `scan` | `true` | Run the code scan. Set `false` to run only the live site check |
 | `path` | `.` | Path to scan |
 | `fail-on` | `high` | Fail at this severity or above. `none` never fails |
 | `min-severity` | `info` | Lowest severity reported |
 | `sarif` | `true` | Write `popia-scan.sarif` |
 | `upload-sarif` | `true` | Upload to code scanning (needs `security-events: write`). Runs with `continue-on-error`, so a private repo without code scanning still gets the summary and the threshold check |
+| `baseline` | | Baseline file. Known findings are hidden and only new ones count. See below |
+| `changed-since` | | Report only findings in files changed since this ref, for example `origin/main`. Needs `fetch-depth: 0` on checkout |
+| `site-url` | | Also run the passive live site check on this URL. Use a site you own or may test |
+| `site-fail-on` | `high` | Fail when the site check finds something at or above this severity |
 | `python-version` | `3.12` | Any version from 3.8 |
 
 | Output | Meaning |
@@ -45,10 +50,42 @@ steps:
 | `critical` | Number of critical findings |
 | `high` | Number of high findings |
 | `sarif-file` | SARIF path, if written |
+| `site-critical` | Number of critical site check findings |
+| `site-high` | Number of high site check findings |
+
+The action scans once and writes the JSON, Markdown and SARIF reports from that one scan.
+
+### Existing codebase: start from a baseline
+
+A team with many old findings can switch the check on today and fail only on new ones:
+
+```bash
+uvx popia-kit scan . --write-baseline popia-baseline.json
+git add popia-baseline.json
+```
+
+Then set `baseline: popia-baseline.json` on the action. Use the same `path` you used to write it. The file holds hashes, rule ids and file paths, never the evidence. The job summary says how many known findings were hidden and how many are fixed. Shrink the baseline as you fix things by writing it again.
+
+### Pull requests: changed files only
+
+```yaml
+- uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+  with:
+    fetch-depth: 0
+- uses: VenusOne-Lee/popia-compliance@<commit> # pin to a release commit
+  with:
+    changed-since: origin/${{ github.base_ref }}
+```
+
+Only findings in files the pull request changed are reported. Repository-wide checks, such as a missing privacy notice, are left out, so keep a full scan on `main` too.
+
+### Weekly live site check
+
+[`examples/github-workflow-site-check.yml`](../examples/github-workflow-site-check.yml) re-checks your deployed site every Monday and fails the run, which emails you, when a high finding appears: a tracker before consent, a lost security header, a missing privacy link. It is passive: it reads the home page and a few common notice paths. Point it only at a site you own or may test.
 
 Tips:
 
-- Start with `fail-on: critical` on an existing codebase, fix those, then move to `high`.
+- Start with `fail-on: critical` on an existing codebase, fix those, then move to `high`. Or use a baseline.
 - Suppress a confirmed false positive inline with `// popia-ignore: RULE-ID` and a reason, or with a `.popiaignore` file. Record why in the PR.
 - Findings show in the Security tab under the `popia-scan` category.
 

@@ -104,6 +104,42 @@ jobs:
           cd /tmp && npx -y ./popia-kit-*.tgz version && npx -y ./popia-kit-*.tgz scan "$GITHUB_WORKSPACE/tests/fixtures/demo-app" > /tmp/npx-scan.txt || true
           grep -q "summary:" /tmp/npx-scan.txt
 
+  action:
+    name: GitHub Action (one scan, baseline)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Full scan reports findings
+        id: full
+        uses: ./
+        with:
+          path: tests/fixtures/demo-app
+          fail-on: none
+          upload-sarif: "false"
+
+      - name: Write a baseline
+        run: python3 scripts/popia_scan.py tests/fixtures/demo-app --write-baseline "$RUNNER_TEMP/popia-baseline.json"
+
+      - name: Scan against the baseline
+        id: base
+        uses: ./
+        with:
+          path: tests/fixtures/demo-app
+          baseline: ${{ runner.temp }}/popia-baseline.json
+          fail-on: high
+          upload-sarif: "false"
+
+      - name: Check outputs
+        env:
+          FULL_HIGH: ${{ steps.full.outputs.high }}
+          BASE_HIGH: ${{ steps.base.outputs.high }}
+          SARIF: ${{ steps.full.outputs.sarif-file }}
+        run: |
+          test "$FULL_HIGH" -gt 0
+          test "$BASE_HIGH" -eq 0
+          test -s "$SARIF"
+
   supabase:
     name: Supabase check SQL on a throwaway Postgres
     runs-on: ubuntu-latest
