@@ -58,7 +58,7 @@ Cite sections like s69(2). Use South African terms: responsible party, operator,
 Run this when asked for a POPIA, privacy or security review, before publishing, and after any migration that adds a table, view, function, policy or bucket.
 
 1. Run the query below with your read-only SQL tool. Never run it as a migration. It reads the system catalogs only: no table data, no personal information, no changes.
-2. Read the single JSON value it returns and apply the rules below. Skip the platform schemas `extensions`, `graphql`, `graphql_public`, `realtime`, `storage`, `supabase_functions`, `vault`. Use the severities below. Column names that suggest personal information (email, phone, ID number, address, date of birth, health, bank details and similar) raise some of them.
+2. Read the single JSON value it returns and apply the rules below. Skip tables, views, policies and functions in the platform schemas `extensions`, `graphql`, `graphql_public`, `realtime`, `storage`, `supabase_functions`, `vault`, but still check buckets. Use the severities below. Column names that suggest personal information (email, phone, ID number, address, date of birth, health, bank details and similar) raise some of them.
 3. Report a table: severity, rule, object, evidence, POPIA section, fix. Say it is a lead to review, not a legal conclusion.
 4. Propose the fixes as one migration and wait for the user to approve it. Never change policies, grants or buckets without approval. A critical finding may mean personal information was already exposed: tell the user that s22 may require notifying the Information Regulator and the people affected.
 5. After the migration, run the query again and confirm the findings are gone.
