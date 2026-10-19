@@ -7,9 +7,16 @@ Legal content merged without a legal reviewer is marked `pending legal review` (
 ## [Unreleased]
 
 ### Added
+- `popia-kit init`: sets up a project in one command. Finds the AI tools in use and adds the POPIA rules file for each (Claude Code, Cursor, Copilot, Windsurf, Gemini, AGENTS.md), a scan workflow and a starter `.popiaignore`. Shared files such as `CLAUDE.md` get a marked block that later runs refresh. Existing files are left alone unless `--force`, and nothing is written through a symlink.
+- Scanner baseline: `--write-baseline FILE` records today's findings as hashes, rule ids and paths, and `--baseline FILE` reports only new ones. A finding keeps its match when code above it moves.
+- Scanner `--changed-since REF`: only findings in files changed since the merge base with REF, for pull request checks.
+- Scanner `--report FORMAT=FILE`: write more report formats from the same scan.
+- GitHub Action: `baseline`, `changed-since`, `site-url`, `site-fail-on` and `scan` inputs. With `site-url` the action runs the passive live site check, and `examples/github-workflow-site-check.yml` runs it every Monday.
+- `server.json` and the README `mcp-name` line for the official MCP Registry. Publishing steps are in docs/releasing.md.
 - A false positive issue template, so reports name the rule, a small example and the expected result.
 
 ### Changed
+- The GitHub Action scans once and writes the JSON, Markdown and SARIF reports from that scan, instead of scanning three times.
 - When the site check cannot read a site, the CLI and MCP tool now point to the code scanner and the AI skill, which bot protection does not affect.
 - README and quickstart link to popiakit.co.za and the browser site check, and the README has PyPI, CI, licence and site check badges.
 - PyPI metadata: links to the project site, site check, changelog, docs and security policy, plus classifiers for Python 3.8 to 3.12, the MIT licence and OS independence.
