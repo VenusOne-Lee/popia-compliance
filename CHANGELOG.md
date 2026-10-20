@@ -6,6 +6,8 @@ Legal content merged without a legal reviewer is marked `pending legal review` (
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-10-20
+
 ### Added
 - `popia-kit init`: sets up a project in one command. Finds the AI tools in use and adds the POPIA rules file for each (Claude Code, Cursor, Copilot, Windsurf, Gemini, AGENTS.md), a scan workflow and a starter `.popiaignore`. Shared files such as `CLAUDE.md` get a marked block that later runs refresh. Existing files are left alone unless `--force`, and nothing is written through a symlink.
 - Scanner baseline: `--write-baseline FILE` records today's findings as hashes, rule ids and paths, and `--baseline FILE` reports only new ones. A finding keeps its match when code above it moves.
@@ -16,6 +18,9 @@ Legal content merged without a legal reviewer is marked `pending legal review` (
 - `popia-kit operators`: lists every third-party API or SDK a codebase calls and the personal information that appears to reach each one. It reads dependency manifests (package.json, requirements files, pyproject.toml, Pipfile), JavaScript, TypeScript and Python imports, the client objects made from them, and API hosts in fetch calls, script tags and form actions. Each row shows where it was found, the fields seen near its calls, what the service receives by design, and flags for special personal information (s26) and children (s34). Output as Markdown, JSON or a CSV with empty hosting country, s72 basis and operator agreement columns, so it can start the operator register (s20, s21) and the list of cross-border transfers (s72). Also the MCP tool `popia_operators`, and a step in the skill's Audit mode. Field matches are leads to confirm.
 - A page for site owners on the site checker: what it requests, that it stops at bot protection, and how to allow it for one check or block it (`docs/site-check-bot.md`).
 - A false positive issue template, so reports name the rule, a small example and the expected result.
+- `popia-kit supabase`: a read-only check of a live Supabase database. One catalog query (`popia-kit supabase sql`) that reads settings, never table data, and 11 rules: tables open to the anon key or to every signed-in user, `using (true)` policies, open inserts, views that skip row level security or read `auth.users`, materialized views, callable security definer functions, public buckets, foreign tables and extra exposed schemas. Severity rises when column names suggest personal information. Run the query in the SQL editor and `popia-kit supabase check result.json`, or `popia-kit supabase run` with psql, which uses a read-only session. CI runs it against a throwaway Postgres seeded with known risks.
+- `hosted/site-check/report/actions.json`: a proposed action, reason and POPIA Kit pointer for every site check finding, the title of each cited section, and report copy. A test checks it covers every rule.
+- Lovable workspace skill in `adapters/lovable/skill/SKILL.md`: the Lovable rules plus the read-only database check, so a Lovable project can run it and propose a migration. Generated from the core, the inventory query and the rule table, and CI checks it is current.
 
 ### Changed
 - The GitHub Action scans once and writes the JSON, Markdown and SARIF reports from that scan, instead of scanning three times.
@@ -23,20 +28,11 @@ Legal content merged without a legal reviewer is marked `pending legal review` (
 - The site check User-Agent now links to the page for site owners, and the blocked message says the site owner can allow the checker for one check. The `popia-site-check/` token is unchanged.
 - README and quickstart link to popiakit.co.za and the browser site check, and the README has PyPI, CI, licence and site check badges.
 - PyPI metadata: links to the project site, site check, changelog, docs and security policy, plus classifiers for Python 3.8 to 3.12, the MIT licence and OS independence.
-
-## [1.2.0] - 2026-10-19
-
-### Added
-- `popia-kit supabase`: a read-only check of a live Supabase database. One catalog query (`popia-kit supabase sql`) that reads settings, never table data, and 11 rules: tables open to the anon key or to every signed-in user, `using (true)` policies, open inserts, views that skip row level security or read `auth.users`, materialized views, callable security definer functions, public buckets, foreign tables and extra exposed schemas. Severity rises when column names suggest personal information. Run the query in the SQL editor and `popia-kit supabase check result.json`, or `popia-kit supabase run` with psql, which uses a read-only session. CI runs it against a throwaway Postgres seeded with known risks.
-- `hosted/site-check/report/actions.json`: a proposed action, reason and POPIA Kit pointer for every site check finding, the title of each cited section, and report copy. A test checks it covers every rule.
-- Lovable workspace skill in `adapters/lovable/skill/SKILL.md`: the Lovable rules plus the read-only database check, so a Lovable project can run it and propose a migration. Generated from the core, the inventory query and the rule table, and CI checks it is current.
+- popia-kit is on PyPI. Install commands are now `uvx popia-kit scan .`, `pipx run popia-kit scan .` and `pipx install popia-kit`.
 
 ### Fixed
 - Site check graded bot check pages. A site behind Vercel or Cloudflare bot protection answered with its challenge page, and the check reported that page's gaps, including a missing privacy link, as the site's. Now a bot check or an error status stops the check with a plain message and nothing is graded. Reported by a user on launch day.
 - Site check reported "not found" for notices on pages that build their links with JavaScript. Those notices now show as unknown, with one info finding (WEB-022) that says to confirm in a browser.
-
-### Changed
-- popia-kit is on PyPI. Install commands are now `uvx popia-kit scan .`, `pipx run popia-kit scan .` and `pipx install popia-kit`.
 
 ## [1.1.0] - 2026-10-18
 
