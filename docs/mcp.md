@@ -26,6 +26,7 @@ Tool definitions (name, description, input schema) live in [`mcp/tools.json`](..
 |---|---|---|
 | `popia_scan` | `path`, `min_severity`, `rules`, `format` (`md` or `json`) | Static scan of a local repo, directory or file. Snippets are redacted by the scanner. |
 | `popia_scan_snippet` | `filename`, `content`, `min_severity`, `format` | Scan of pasted code. The content is written to a temporary directory under `filename`, scanned, then deleted. The file extension decides which rules apply. Maximum 500 000 characters. |
+| `popia_operators` | `path`, `ignore_hosts`, `format` (`md`, `json` or `csv`) | Every third-party API or SDK a local codebase calls, from manifests, imports and API hosts, with the personal information that appears to reach each one. The start of an operator register (s20, s21) and a cross-border list (s72). Same path limits as `popia_scan`. |
 | `popia_site_check` | `url` | Passive check of a live site: headers, cookies, trackers, notice links. Ordinary GET requests only. |
 | `popia_generate_pack` | `answers`, `out_dir` (optional) | Document pack drafts from questionnaire answers. Writes to `out_dir` only if given. |
 | `popia_validate_sa_id` | `id_number` | `{"valid": true or false, "masked": "**********123"}`. The full number is never echoed. Date of birth, sex and citizenship are not returned. |
@@ -181,6 +182,7 @@ A remote (HTTP) MCP server is planned, written in TypeScript and hosted on Lovab
 | `popia_scan_snippet` | Yes | Works on pasted content, not a local path |
 | `popia_site_check` | Yes | Passive GET requests to a public URL |
 | `popia_scan` (path) | No, local only | A hosted server cannot see the user's repository |
+| `popia_operators` (path) | No, local only | A hosted server cannot see the user's repository |
 | `popia_generate_pack` (writes files) | No, local only | Writes to the user's disk. A hosted version may return contents without `out_dir` later |
 
 `tools.json` marks each tool with `local_only`. The hosted server must list only tools where `local_only` is false.

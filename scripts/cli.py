@@ -3,6 +3,7 @@
 popia-kit: one entry point for the POPIA Kit tools.
 
     popia-kit scan ./my-app                  code scanner (43 rules)
+    popia-kit operators ./my-app             third parties and the data sent to each
     popia-kit site-check https://example.com passive live site check
     popia-kit supabase sql                   read-only Supabase database check
     popia-kit pack --interactive             draft compliance pack
@@ -37,6 +38,7 @@ VERSION = "1.2.0"
 
 COMMANDS = {
     "scan": ("popia_scan", "Scan a codebase for POPIA and security risks"),
+    "operators": ("popia_operators", "List third-party APIs and SDKs and the data sent to each"),
     "site-check": ("site_check", "Passive check of a live website"),
     "supabase": ("supabase_check", "Read-only check of a Supabase database"),
     "pack": ("popia_pack", "Generate a draft compliance pack"),
@@ -94,6 +96,10 @@ def main(argv: Optional[List[str]] = None) -> int:
 
 def run_scan() -> int:
     return main(["scan"] + sys.argv[1:])
+
+
+def run_operators() -> int:
+    return main(["operators"] + sys.argv[1:])
 
 
 def run_site_check() -> int:

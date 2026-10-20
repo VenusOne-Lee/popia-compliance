@@ -81,13 +81,21 @@ No `uv`? Use `pipx run popia-kit scan .` or `npx -y github:VenusOne-Lee/popia-co
 2. **High:** trackers before consent, pre-ticked boxes, real ID numbers in test data, no privacy notice.
 3. **Medium and below:** in your normal backlog.
 
-**4. Check the live site** you own:
+**4. List your third parties.** Every API or SDK your code calls, and the personal information that appears to reach each one. Each is an operator (s20, s21) and usually a cross-border transfer (s72).
+
+```bash
+uvx popia-kit operators . --format csv --out operators.csv
+```
+
+The CSV has empty `hosting_country`, `s72_basis` and `operator_agreement` columns to fill in. Copy the rows into your ROPA. If a host in the list is your own API, rerun with `--ignore-host api.your-app.co.za`.
+
+**5. Check the live site** you own:
 
 ```bash
 uvx popia-kit site-check https://your-site.co.za --out site-check.md
 ```
 
-**5. Check the database** if you use Supabase. The scanner reads your migrations. This reads the live settings: tables open to the anon key, policies that let everyone in, views over `auth.users`, exposed functions and public buckets. It reads the system catalogs only, never your data, and changes nothing.
+**6. Check the database** if you use Supabase. The scanner reads your migrations. This reads the live settings: tables open to the anon key, policies that let everyone in, views over `auth.users`, exposed functions and public buckets. It reads the system catalogs only, never your data, and changes nothing.
 
 ```bash
 uvx popia-kit supabase sql > inventory.sql
@@ -101,9 +109,9 @@ uvx popia-kit supabase check result.json --format md --out supabase-check.md
 
 With `psql` installed you can skip the copy and paste: set `SUPABASE_DB_URL` to the connection string from Project settings, Database, then run `uvx popia-kit supabase run`. The session is read-only.
 
-**6. Stop it coming back.** Add the GitHub Action from path 1, step 5, or the pre-commit hook in [docs/automation.md](automation.md).
+**7. Stop it coming back.** Add the GitHub Action from path 1, step 5, or the pre-commit hook in [docs/automation.md](automation.md).
 
-**7. Fill the gaps the scanner can't see:** Information Officer registration, privacy notice content, PAIA manual, operator agreements, retention, breach plan. The compliance pack drafts most of them: path 1, step 6.
+**8. Fill the gaps the scanner can't see:** Information Officer registration, privacy notice content, PAIA manual, operator agreements, retention, breach plan. The compliance pack drafts most of them: path 1, step 6.
 
 ---
 

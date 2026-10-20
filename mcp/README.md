@@ -19,7 +19,7 @@ Claude Desktop, Cursor and Windsurf (`mcpServers` block):
 { "mcpServers": { "popia": { "command": "python3", "args": ["/path/to/popia-compliance/mcp/server.py"] } } }
 ```
 
-Tools: `popia_scan`, `popia_scan_snippet`, `popia_site_check`, `popia_generate_pack`, `popia_validate_sa_id`, `popia_lookup`, `popia_checklist`, `popia_breach_triage`. Definitions are in [`tools.json`](tools.json), shared with the planned hosted server.
+Tools: `popia_scan`, `popia_scan_snippet`, `popia_operators`, `popia_site_check`, `popia_generate_pack`, `popia_validate_sa_id`, `popia_lookup`, `popia_checklist`, `popia_breach_triage`. Definitions are in [`tools.json`](tools.json), shared with the planned hosted server.
 
 Full documentation, including VS Code config, resources, protocol notes and the hosted plan: [docs/mcp.md](../docs/mcp.md).
 

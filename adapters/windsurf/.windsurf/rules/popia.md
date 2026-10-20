@@ -21,7 +21,7 @@ Full skill, scanner and references: https://github.com/VenusOne-Lee/popia-compli
 8. **Build in rights (s23, s24, s11(3)).** Export my data, delete my account, correct my details, marketing opt-out on every message, and a way to object.
 9. **Retention (s14).** Every table with personal information has a retention period and a scheduled job that deletes or de-identifies it.
 10. **No PI in logs, URLs or browser storage (s19).** Log IDs and events, not emails, phone numbers or ID numbers. Never put personal information in query strings. Don't keep tokens or personal information in localStorage.
-11. **Third parties (s20, s21, s72).** Every SDK or API that receives personal information is an operator and usually a cross-border transfer. Send the minimum. Tell the user to record it with its hosting country and a written operator agreement.
+11. **Third parties (s20, s21, s72).** Every SDK or API that receives personal information is an operator and usually a cross-border transfer. Send the minimum. Tell the user to record it with its hosting country and a written operator agreement. When asked, list every third-party API or SDK the code calls and the personal information each one receives (`python3 scripts/popia_operators.py <path>` if available).
 12. **Test data is synthetic.** Never use production personal information in seeds, fixtures, previews, screenshots or prompts.
 
 ## Stop and ask the human before

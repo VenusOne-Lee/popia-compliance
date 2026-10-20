@@ -35,6 +35,21 @@
       }
     },
     {
+      "name": "popia_operators",
+      "description": "List every third-party API or SDK a local codebase calls (from dependency manifests, imports and API hosts) and the personal information that appears to reach each one. The start of an operator register (s20, s21) and a list of cross-border transfers (s72). Field matches are leads to confirm. Snippets are redacted. Local only.",
+      "local_only": true,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {"type": "string", "description": "Absolute or relative path to a repository, directory or file on this machine."},
+          "ignore_hosts": {"type": "array", "items": {"type": "string"}, "maxItems": 50, "description": "Hosts you run yourself, for example api.my-app.co.za. Subdomains match too."},
+          "format": {"type": "string", "enum": ["md", "json", "csv"], "default": "md", "description": "Output format. csv has ROPA-style columns to fill in."}
+        },
+        "required": ["path"],
+        "additionalProperties": false
+      }
+    },
+    {
       "name": "popia_site_check",
       "description": "Passive check of a live website: security headers, cookies set before consent, third-party trackers, links to privacy notice, PAIA manual, cookie notice and Information Officer. Makes ordinary GET requests only. No active testing.",
       "local_only": false,
