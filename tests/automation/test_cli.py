@@ -36,6 +36,11 @@ class TestCli(unittest.TestCase):
         self.assertIn('"summary"', out)
         self.assertIn(code, (0, 1))
 
+    def test_operators_dispatch(self):
+        code, out, _ = self.run_cli("operators", str(ROOT / "tests" / "fixtures" / "demo-app"), "--format", "json")
+        self.assertEqual(code, 0)
+        self.assertIn('"popia_operators"', out)
+
     def test_id_does_not_echo_number(self):
         code, out, _ = self.run_cli("id", "mask", "5912280409005")
         self.assertEqual(code, 0)

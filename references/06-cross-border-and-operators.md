@@ -55,7 +55,7 @@ Hosting locations change. Treat this as a starting point and confirm each vendor
 
 | ID | Check |
 |---|---|
-| XB-01 | Operator register complete (every vendor that touches PI) |
+| XB-01 | Operator register complete (every vendor that touches PI). Start it with `popia-kit operators <path> --format csv` |
 | XB-02 | Written s21 terms in place for each operator |
 | XB-03 | Operator breach notification duty is "immediately" or a defined short window |
 | XB-04 | Hosting country recorded per data store/vendor |

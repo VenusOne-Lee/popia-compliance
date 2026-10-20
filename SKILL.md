@@ -66,7 +66,11 @@ Full patterns with code (Supabase/Postgres, Next.js, Node, Python, Firebase, Wor
 Follow `references/09-audit-procedure.md`. Short version:
 
 1. **Scope** - what's in (repo, live URL, backend project, CRM, integrations), who is the responsible party, who are the operators.
-2. **Data map** - trace every PI field from collection → storage → processing → sharing → deletion. Fill `templates/ropa.csv`.
+2. **Data map** - trace every PI field from collection → storage → processing → sharing → deletion. Fill `templates/ropa.csv`. For the sharing step, list every third-party API or SDK the code calls and the PI it sends: that list is the operator register (s20, s21) and the cross-border list (s72).
+   ```bash
+   python3 scripts/popia_operators.py <repo-path> --format md --out operators.md
+   ```
+   Without the script, read the dependency manifests, imports and outgoing HTTP calls yourself and build the same table: vendor, what it does, fields sent, where in the code.
 3. **Automated scan** - run:
    ```bash
    python3 scripts/popia_scan.py <repo-path> --format md --out popia-scan.md

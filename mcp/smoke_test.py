@@ -76,7 +76,7 @@ def main() -> int:
         check(c.request("ping")["result"] == {}, "ping")
 
         tools = {t["name"]: t for t in c.request("tools/list")["result"]["tools"]}
-        expected = {"popia_scan", "popia_scan_snippet", "popia_site_check", "popia_generate_pack",
+        expected = {"popia_scan", "popia_scan_snippet", "popia_operators", "popia_site_check", "popia_generate_pack",
                     "popia_validate_sa_id", "popia_lookup", "popia_checklist", "popia_breach_triage"}
         check(expected <= set(tools), f"tools/list has {len(expected)} tools")
         check(all("inputSchema" in t for t in tools.values()), "every tool has inputSchema")
@@ -109,6 +109,11 @@ def main() -> int:
         check(not result["isError"], f"popia_scan ran on {target.relative_to(REPO)}")
         scan = json.loads(text.split("\n\n---\n")[0])
         check(scan["tool"] == "popia_scan" and "summary" in scan, "popia_scan JSON shape")
+
+        result, text = c.call("popia_operators", {"path": str(target), "format": "json"})
+        check(not result["isError"], "popia_operators ran")
+        inv = json.loads(text.split("\n\n---\n")[0])
+        check(inv["tool"] == "popia_operators" and "operators" in inv, "popia_operators JSON shape")
 
         snippet = 'const k = "sk_live_' + "a1B2c3D4e5F6g7H8i9J0kLmN" + '";\n'
         result, text = c.call("popia_scan_snippet", {"filename": "src/pay.ts", "content": snippet, "format": "json"})

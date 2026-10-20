@@ -3,30 +3,7 @@ import json
 import re
 
 from popia_scan import Rule
-
-SDKS = {
-    # package or import fragment -> (vendor, category)
-    "openai": ("OpenAI", "ai"), "@anthropic-ai/sdk": ("Anthropic", "ai"), "anthropic": ("Anthropic", "ai"),
-    "@google/generative-ai": ("Google Gemini", "ai"), "@google/genai": ("Google Gemini", "ai"),
-    "google-generativeai": ("Google Gemini", "ai"), "@mistralai/mistralai": ("Mistral", "ai"),
-    "cohere-ai": ("Cohere", "ai"), "groq-sdk": ("Groq", "ai"), "replicate": ("Replicate", "ai"),
-    "elevenlabs": ("ElevenLabs", "ai"), "@elevenlabs/elevenlabs-js": ("ElevenLabs", "ai"),
-    "ai": ("Vercel AI SDK (check provider)", "ai"), "langchain": ("LangChain (check provider)", "ai"),
-    "@sentry/": ("Sentry", "errors"), "sentry-sdk": ("Sentry", "errors"), "@datadog/": ("Datadog", "logs"),
-    "logrocket": ("LogRocket", "replay"), "@intercom/": ("Intercom", "support"),
-    "@hubspot/": ("HubSpot", "crm"), "jsforce": ("Salesforce", "crm"), "simple-salesforce": ("Salesforce", "crm"),
-    "@sendgrid/mail": ("SendGrid", "email"), "resend": ("Resend", "email"), "postmark": ("Postmark", "email"),
-    "@mailchimp/": ("Mailchimp", "email"), "mailgun": ("Mailgun", "email"), "nodemailer": ("SMTP provider", "email"),
-    "twilio": ("Twilio", "messaging"), "@vonage/": ("Vonage", "messaging"), "clickatell": ("Clickatell", "messaging"),
-    "stripe": ("Stripe", "payments"), "@paystack/": ("Paystack", "payments"), "paystack": ("Paystack", "payments"),
-    "@supabase/supabase-js": ("Supabase", "backend"), "firebase": ("Firebase / Google", "backend"),
-    "firebase-admin": ("Firebase / Google", "backend"), "@aws-sdk/": ("AWS", "cloud"), "boto3": ("AWS", "cloud"),
-    "@azure/": ("Azure", "cloud"), "@google-cloud/": ("Google Cloud", "cloud"), "algoliasearch": ("Algolia", "search"),
-    "@pinecone-database/pinecone": ("Pinecone", "ai"), "posthog-js": ("PostHog", "analytics"),
-    "mixpanel": ("Mixpanel", "analytics"), "@segment/": ("Segment", "analytics"), "@amplitude/": ("Amplitude", "analytics"),
-    "zapier": ("Zapier", "automation"), "airtable": ("Airtable", "data"), "@notionhq/client": ("Notion", "data"),
-    "googleapis": ("Google APIs", "cloud"), "@slack/": ("Slack", "messaging"), "whatsapp": ("WhatsApp/Meta", "messaging"),
-}
+from popia_vendors import SDKS  # shared with the operator inventory, scripts/popia_operators.py
 
 
 def _manifest_sdks(ctx):
