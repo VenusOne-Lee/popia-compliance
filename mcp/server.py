@@ -419,6 +419,24 @@ def tool_popia_scan(args: dict) -> str:
     return _fmt_scan(ps, res, fmt)
 
 
+def tool_popia_operators(args: dict) -> str:
+    path = _str(args, "path")
+    fmt = _str(args, "format", False, "md")
+    if fmt not in ("md", "json", "csv"):
+        raise RpcError(INVALID_PARAMS, "format must be md, json or csv")
+    ignore = args.get("ignore_hosts", [])
+    if not isinstance(ignore, list) or not all(isinstance(h, str) for h in ignore) or len(ignore) > 50:
+        raise RpcError(INVALID_PARAMS, "ignore_hosts must be a list of up to 50 host names")
+    p = _safe_scan_path(path)
+    if not p.exists():
+        raise ToolError("Path not found.")
+    po = _import("popia_operators")
+    res = po.inventory(str(p), ignore)
+    if fmt == "json":
+        return json.dumps(res, indent=2)
+    return po.fmt_csv(res) if fmt == "csv" else po.fmt_md(res)
+
+
 SAFE_NAME = re.compile(r"^[A-Za-z0-9._\-/]+$")
 
 
@@ -512,6 +530,7 @@ def tool_popia_breach_triage(args: dict) -> str:
 TOOLS = {
     "popia_scan": tool_popia_scan,
     "popia_scan_snippet": tool_popia_scan_snippet,
+    "popia_operators": tool_popia_operators,
     "popia_site_check": tool_popia_site_check,
     "popia_generate_pack": tool_popia_generate_pack,
     "popia_validate_sa_id": tool_popia_validate_sa_id,

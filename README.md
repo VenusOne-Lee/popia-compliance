@@ -20,6 +20,7 @@ Law current to **18 October 2026**. See [regulatory watch](references/10-regulat
 | **Skill** | Teaches AI tools POPIA in Build, Audit, Breach, Docs and Explain modes | [`SKILL.md`](SKILL.md), [`references/`](references) | Available |
 | **Adapters** | Same rules for Cursor, Codex, Copilot, Windsurf, Gemini, Lovable, ChatGPT | [`adapters/`](adapters) | Available |
 | **Scanner** | Finds open tables, leaked keys, trackers before consent, pre-ticked boxes, PI in logs and more. Markdown, JSON, SARIF | [`scripts/popia_scan.py`](scripts/popia_scan.py) | Available |
+| **Operator inventory** | Lists every third-party API or SDK the code calls and the personal information that appears to reach each: the start of your operator register (s20, s21) and cross-border list (s72) | [`scripts/popia_operators.py`](scripts/popia_operators.py) | Available |
 | **Site check** | Passive check of a live site: headers, cookies before consent, trackers, notices | [`scripts/site_check.py`](scripts/site_check.py) | Available |
 | **Hosted site check** | The same check as a public endpoint you can host, hardened for untrusted URLs: SSRF guard on every hop, rate limits, optional Turnstile | [`hosted/site-check/`](hosted/site-check) | Available |
 | **Supabase check** | Read-only check of a live Supabase database: tables open to the anon key, open policies, views over `auth.users`, exposed functions, public buckets | [`scripts/supabase_check.py`](scripts/supabase_check.py) | Available |
@@ -73,6 +74,7 @@ To keep it installed: `pipx install popia-kit`, then use `popia-kit` anywhere. F
 | Command | What it does |
 |---|---|
 | `popia-kit scan ./my-app --format md --out popia-scan.md` | Scan a codebase (43 rules). Also `--format json` or `--format sarif` |
+| `popia-kit operators ./my-app --format csv --out operators.csv` | Every third-party API or SDK the code calls, and the personal information that appears to reach each. Your operator and cross-border list |
 | `popia-kit site-check https://example.co.za --out site-check.md` | Passive check of a live site you own |
 | `popia-kit supabase sql` then `popia-kit supabase check result.json` | Read-only check of a Supabase database. Reads settings, never data |
 | `popia-kit pack --interactive --out ./compliance-pack` | Answer questions, get draft notices, PAIA manual, ROPA and more |

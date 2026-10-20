@@ -7,6 +7,7 @@ Legal content merged without a legal reviewer is marked `pending legal review` (
 ## [Unreleased]
 
 ### Added
+- `popia-kit operators`: lists every third-party API or SDK a codebase calls and the personal information that appears to reach each one. It reads dependency manifests (package.json, requirements files, pyproject.toml, Pipfile), JavaScript, TypeScript and Python imports, the client objects made from them, and API hosts in fetch calls, script tags and form actions. Each row shows where it was found, the fields seen near its calls, what the service receives by design, and flags for special personal information (s26) and children (s34). Output as Markdown, JSON or a CSV with empty hosting country, s72 basis and operator agreement columns, so it can start the operator register (s20, s21) and the list of cross-border transfers (s72). Also the MCP tool `popia_operators`, and a step in the skill's Audit mode. Field matches are leads to confirm.
 - A page for site owners on the site checker: what it requests, that it stops at bot protection, and how to allow it for one check or block it (`docs/site-check-bot.md`).
 - A false positive issue template, so reports name the rule, a small example and the expected result.
 

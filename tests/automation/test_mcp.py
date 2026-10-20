@@ -67,6 +67,17 @@ class TestServer(unittest.TestCase):
             self.assertTrue(res["isError"])
             self.assertIn("popia_pack", res["content"][0]["text"])
 
+    def test_operators_tool(self):
+        r = self.rpc("tools/call", {"name": "popia_operators",
+                                    "arguments": {"path": str(ROOT / "tests" / "fixtures" / "operators-app"),
+                                                  "ignore_hosts": ["operators-app.co.za"], "format": "csv"}})
+        self.assertFalse(r["result"]["isError"])
+        self.assertIn("Stripe,payments,", r["result"]["content"][0]["text"])
+        r = self.rpc("tools/call", {"name": "popia_operators", "arguments": {"path": "~/.ssh"}})
+        self.assertTrue(r["result"]["isError"])
+        r = self.rpc("tools/call", {"name": "popia_operators", "arguments": {"path": ".", "ignore_hosts": "x"}})
+        self.assertEqual(r["error"]["code"], -32602)
+
     def test_checklist_areas(self):
         for area in server.CHECKLIST_AREAS:
             r = self.rpc("tools/call", {"name": "popia_checklist", "arguments": {"area": area}})

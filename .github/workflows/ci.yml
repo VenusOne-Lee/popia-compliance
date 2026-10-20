@@ -89,6 +89,8 @@ jobs:
           /tmp/pk/bin/popia-kit version
           /tmp/pk/bin/popia-kit scan "$GITHUB_WORKSPACE/tests/fixtures/demo-app" --format json --out /tmp/scan.json || true
           python -c "import json; r=json.load(open('/tmp/scan.json')); assert r['files_scanned'] > 0 and len(r['findings']) > 0, r['summary']"
+          /tmp/pk/bin/popia-kit operators "$GITHUB_WORKSPACE/tests/fixtures/operators-app" --format csv --out /tmp/operators.csv
+          grep -q "^Stripe,payments," /tmp/operators.csv
           /tmp/pk/bin/popia-kit pack --example /tmp/ex.json
           /tmp/pk/bin/popia-kit pack --answers /tmp/ex.json --out /tmp/pack
           test -f /tmp/pack/privacy-notice.md
@@ -96,7 +98,7 @@ jobs:
           /tmp/pk/bin/popia-kit supabase sql | grep -q popia_kit_inventory
           /tmp/pk/bin/popia-kit supabase check "$GITHUB_WORKSPACE/tests/fixtures/supabase/seeded-risky.json" --fail-on high && exit 1 || test $? -eq 1
           printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"ci","version":"1"}}}' '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' | /tmp/pk/bin/popia-kit mcp > /tmp/mcp.out
-          python -c "import json; r=[json.loads(l) for l in open('/tmp/mcp.out')]; assert len(r[1]['result']['tools']) == 8, r"
+          python -c "import json; r=[json.loads(l) for l in open('/tmp/mcp.out')]; assert len(r[1]['result']['tools']) == 9, r"
 
       - name: npx wrapper runs from a packed tarball
         run: |

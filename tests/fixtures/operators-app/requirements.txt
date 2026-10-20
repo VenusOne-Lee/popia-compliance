@@ -1,0 +1,4 @@
+# Synthetic fixture for the operator inventory.
+anthropic>=0.40
+sentry_sdk==2.0.0
+requests

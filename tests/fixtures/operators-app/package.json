@@ -1,0 +1,13 @@
+{
+  "name": "operators-app",
+  "private": true,
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "stripe": "^16.0.0",
+    "twilio": "^5.0.0",
+    "react": "^18.3.1"
+  },
+  "devDependencies": {
+    "@sentry/cli": "^2.0.0"
+  }
+}
