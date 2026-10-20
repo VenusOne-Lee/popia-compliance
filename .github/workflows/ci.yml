@@ -87,6 +87,8 @@ jobs:
         working-directory: /tmp
         run: |
           /tmp/pk/bin/popia-kit version
+          mkdir -p /tmp/init-test/.cursor && /tmp/pk/bin/popia-kit init /tmp/init-test
+          test -f /tmp/init-test/.cursor/rules/popia.mdc && test -f /tmp/init-test/.github/workflows/popia-scan.yml
           /tmp/pk/bin/popia-kit scan "$GITHUB_WORKSPACE/tests/fixtures/demo-app" --format json --out /tmp/scan.json || true
           python -c "import json; r=json.load(open('/tmp/scan.json')); assert r['files_scanned'] > 0 and len(r['findings']) > 0, r['summary']"
           /tmp/pk/bin/popia-kit operators "$GITHUB_WORKSPACE/tests/fixtures/operators-app" --format csv --out /tmp/operators.csv
@@ -105,6 +107,44 @@ jobs:
           npm pack --pack-destination /tmp
           cd /tmp && npx -y ./popia-kit-*.tgz version && npx -y ./popia-kit-*.tgz scan "$GITHUB_WORKSPACE/tests/fixtures/demo-app" > /tmp/npx-scan.txt || true
           grep -q "summary:" /tmp/npx-scan.txt
+          mkdir -p /tmp/npx-init && npx -y ./popia-kit-*.tgz init /tmp/npx-init --tools cursor
+          test -f /tmp/npx-init/.cursor/rules/popia.mdc
+
+  action:
+    name: GitHub Action (one scan, baseline)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Full scan reports findings
+        id: full
+        uses: ./
+        with:
+          path: tests/fixtures/demo-app
+          fail-on: none
+          upload-sarif: "false"
+
+      - name: Write a baseline
+        run: python3 scripts/popia_scan.py tests/fixtures/demo-app --write-baseline "$RUNNER_TEMP/popia-baseline.json"
+
+      - name: Scan against the baseline
+        id: base
+        uses: ./
+        with:
+          path: tests/fixtures/demo-app
+          baseline: ${{ runner.temp }}/popia-baseline.json
+          fail-on: high
+          upload-sarif: "false"
+
+      - name: Check outputs
+        env:
+          FULL_HIGH: ${{ steps.full.outputs.high }}
+          BASE_HIGH: ${{ steps.base.outputs.high }}
+          SARIF: ${{ steps.full.outputs.sarif-file }}
+        run: |
+          test "$FULL_HIGH" -gt 0
+          test "$BASE_HIGH" -eq 0
+          test -s "$SARIF"
 
   supabase:
     name: Supabase check SQL on a throwaway Postgres

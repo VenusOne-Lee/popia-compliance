@@ -7,6 +7,8 @@ Stdlib only. Python 3.8+.
     python3 popia_scan.py <path> [--format text|json|md|sarif] [--out FILE]
                                  [--fail-on critical|high|medium|low|info|none]
                                  [--min-severity info] [--rules RULE,RULE] [--list-rules]
+                                 [--baseline FILE] [--write-baseline FILE]
+                                 [--changed-since REF] [--report FORMAT=FILE ...]
 
 Findings are leads, not verdicts. Read the code before reporting them.
 This tool is engineering guidance, not legal advice. See DISCLAIMER.md.
@@ -19,10 +21,12 @@ from __future__ import annotations
 
 import argparse
 import fnmatch
+import hashlib
 import importlib.util
 import json
 import os
 import re
+import subprocess  # nosec B404: runs the user's own git for --changed-since, see changed_files
 import sys
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
@@ -327,6 +331,103 @@ def _mk(r: Rule, rel: str, line: int, snippet: str, extra: str = "") -> Finding:
 
 
 # --------------------------------------------------------------------------------------
+# Baseline and changed files
+# --------------------------------------------------------------------------------------
+BASELINE_VERSION = 1
+
+
+def fingerprint(f: dict) -> str:
+    """Stable id for a finding. Uses the rule, the file and the redacted evidence, not the
+    line number, so a finding keeps its id when code above it moves."""
+    evidence = " ".join((f.get("snippet") or f.get("extra") or "").split())
+    raw = "\x1f".join((f["rule_id"], f["file"], evidence))
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:24]
+
+
+def make_baseline(res: dict) -> dict:
+    """Baseline file content. Holds hashes, rule ids and paths only, never evidence."""
+    entries = [{"fingerprint": fingerprint(f), "rule_id": f["rule_id"], "file": f["file"]}
+               for f in res["findings"]]
+    entries.sort(key=lambda e: (e["file"], e["rule_id"], e["fingerprint"]))
+    return {"tool": "popia_scan", "baseline_version": BASELINE_VERSION,
+            "created_at": res["scanned_at"], "findings": entries}
+
+
+def load_baseline(path: str) -> Dict[str, int]:
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    if not isinstance(data, dict) or not isinstance(data.get("findings"), list):
+        raise ValueError("not a popia_scan baseline file")
+    counts: Dict[str, int] = {}
+    for e in data["findings"]:
+        fp = e.get("fingerprint") if isinstance(e, dict) else None
+        if isinstance(fp, str):
+            counts[fp] = counts.get(fp, 0) + 1
+    return counts
+
+
+def _summarise(findings: List[dict]) -> Dict[str, int]:
+    summary = {s: 0 for s in SEVERITIES}
+    for f in findings:
+        summary[f["severity"]] += 1
+    return summary
+
+
+def apply_baseline(res: dict, counts: Dict[str, int]) -> dict:
+    """Drop findings already in the baseline. Each baseline entry matches one finding, so a
+    second copy of a known problem still shows up."""
+    left = dict(counts)
+    kept, known = [], 0
+    for f in res["findings"]:
+        fp = fingerprint(f)
+        if left.get(fp, 0) > 0:
+            left[fp] -= 1
+            known += 1
+        else:
+            kept.append(f)
+    res["findings"] = kept
+    res["summary"] = _summarise(kept)
+    res["baseline"] = {"known": known, "fixed": sum(left.values())}
+    return res
+
+
+SAFE_REF_RX = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/@{}~^-]{0,199}$")
+
+
+def changed_files(base: Path, ref: str) -> List[str]:
+    """Files changed since the merge base of ref and HEAD, including uncommitted edits,
+    as paths relative to base."""
+    if not SAFE_REF_RX.match(ref):
+        raise ValueError("ref must be a branch, tag or commit name")
+
+    def git(*args: str) -> str:
+        proc = subprocess.run(  # nosec B603 B607: fixed git argv, no shell, ref validated above
+            ["git", "-C", str(base), *args], capture_output=True, text=True, timeout=60, check=True)
+        return proc.stdout
+
+    top = Path(git("rev-parse", "--show-toplevel").strip())
+    merge_base = git("merge-base", ref, "HEAD").strip()
+    names = git("diff", "--name-only", "--diff-filter=ACMR", merge_base, "--").splitlines()
+    names += git("ls-files", "--others", "--exclude-standard").splitlines()
+    out = []
+    for n in names:
+        try:
+            out.append(os.path.relpath(top / n, base).replace(os.sep, "/"))
+        except ValueError:
+            continue
+    return sorted(set(out))
+
+
+def filter_changed(res: dict, changed: List[str], ref: str) -> dict:
+    """Keep findings in changed files. Repository-wide findings are dropped, since a pull
+    request did not cause them."""
+    keep = set(changed)
+    res["findings"] = [f for f in res["findings"] if f["file"] in keep]
+    res["summary"] = _summarise(res["findings"])
+    res["changed_since"] = {"ref": ref, "files": len(keep)}
+    return res
+
+
+# --------------------------------------------------------------------------------------
 # Output
 # --------------------------------------------------------------------------------------
 def fmt_text(res: dict) -> str:
@@ -355,7 +456,17 @@ def fmt_md(res: dict) -> str:
         "| Critical | High | Medium | Low | Info |", "|---|---|---|---|---|",
         f"| {s['critical']} | {s['high']} | {s['medium']} | {s['low']} | {s['info']} |", "",
     ]
-    if not res["findings"]:
+    if res.get("baseline"):
+        b = res["baseline"]
+        md += [f"Baseline: {b['known']} known findings hidden, {b['fixed']} fixed since the baseline. "
+               "Only new findings are listed.", ""]
+    if res.get("changed_since"):
+        c = res["changed_since"]
+        md += [f"Changed files only: {c['files']} files changed since `{c['ref']}`. "
+               "Repository-wide checks are left out.", ""]
+    if not res["findings"] and (res.get("baseline") or res.get("changed_since")):
+        md.append("No new findings. Run a full scan to see everything.")
+    elif not res["findings"]:
         md.append("No findings. That's not proof of compliance: complete the manual checklist in `references/09-audit-procedure.md`.")
     by_rule: Dict[str, List[dict]] = {}
     for f in res["findings"]:
@@ -421,8 +532,23 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--min-severity", default="info", choices=SEVERITIES)
     ap.add_argument("--rules", help="comma-separated rule ids to run")
     ap.add_argument("--list-rules", action="store_true")
+    ap.add_argument("--baseline", metavar="FILE",
+                    help="hide findings recorded in this baseline file and report only new ones")
+    ap.add_argument("--write-baseline", metavar="FILE",
+                    help="record the current findings as the baseline and exit 0")
+    ap.add_argument("--changed-since", metavar="REF",
+                    help="report only findings in files changed since REF (needs git), e.g. origin/main")
+    ap.add_argument("--report", action="append", default=[], metavar="FORMAT=FILE",
+                    help="also write a report, e.g. --report md=scan.md --report sarif=scan.sarif (repeatable)")
     ap.add_argument("--version", action="version", version=__version__)
     a = ap.parse_args(argv)
+
+    reports = []
+    for spec in a.report:
+        fmt, sep, dest = spec.partition("=")
+        if not sep or not dest or fmt not in ("text", "json", "md", "sarif"):
+            ap.error("--report takes FORMAT=FILE with FORMAT one of text, json, md, sarif")
+        reports.append((fmt, dest))
 
     rules = load_rules()
     if a.list_rules:
@@ -431,8 +557,33 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 0
 
     res = scan(a.path, a.rules.split(",") if a.rules else None, a.min_severity, rules)
-    out = {"text": fmt_text, "json": lambda r: json.dumps(r, indent=2), "md": fmt_md,
-           "sarif": lambda r: fmt_sarif(r, rules)}[a.format](res)
+    if a.write_baseline:
+        Path(a.write_baseline).write_text(json.dumps(make_baseline(res), indent=2) + "\n", encoding="utf-8")
+        print(f"wrote baseline {a.write_baseline}: {len(res['findings'])} findings recorded", file=sys.stderr)
+        return 0
+    if a.baseline:
+        try:
+            apply_baseline(res, load_baseline(a.baseline))
+        except (OSError, ValueError) as e:
+            print(f"popia_scan: cannot read baseline ({type(e).__name__})", file=sys.stderr)
+            return 2
+    if a.changed_since:
+        target = Path(a.path).resolve()
+        try:
+            changed = changed_files(target if target.is_dir() else target.parent, a.changed_since)
+        except ValueError as e:
+            print(f"popia_scan: {e}", file=sys.stderr)
+            return 2
+        except (OSError, subprocess.SubprocessError):
+            print("popia_scan: --changed-since needs git and a ref that exists here "
+                  "(in CI, fetch it first, for example with fetch-depth: 0)", file=sys.stderr)
+            return 2
+        filter_changed(res, changed, a.changed_since)
+    formatters = {"text": fmt_text, "json": lambda r: json.dumps(r, indent=2), "md": fmt_md,
+                  "sarif": lambda r: fmt_sarif(r, rules)}
+    for fmt, dest in reports:
+        Path(dest).write_text(formatters[fmt](res), encoding="utf-8")
+    out = formatters[a.format](res)
     if a.out:
         Path(a.out).write_text(out, encoding="utf-8")
         s = res["summary"]

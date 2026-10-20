@@ -1,0 +1,27 @@
+# Copy to .github/workflows/popia-site-check.yml in your repository.
+# Re-checks your live site every Monday with the passive POPIA site check, writes the
+# report to the job summary, and fails the run on high or critical findings, so GitHub
+# emails you. Point it only at a site you own or may test.
+# Findings are leads for review, not legal conclusions. Engineering guidance only.
+name: POPIA site check
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"   # 08:00 SAST every Monday
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  site:
+    runs-on: ubuntu-latest
+    steps:
+      - name: POPIA site check
+        id: popia
+        # Pinned to the commit that added site-url. Move to a release commit when one ships.
+        uses: VenusOne-Lee/popia-compliance@fd0b2e469ee3e9960540152f1f8cb123088b5821
+        with:
+          scan: "false"
+          site-url: https://example.co.za/
+          site-fail-on: high

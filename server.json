@@ -1,0 +1,30 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.VenusOne-Lee/popia-kit",
+  "title": "POPIA Kit",
+  "description": "POPIA privacy and security checks for South African apps: code scan, site check, guidance.",
+  "websiteUrl": "https://popiakit.co.za",
+  "repository": {
+    "url": "https://github.com/VenusOne-Lee/popia-compliance",
+    "source": "github"
+  },
+  "version": "1.2.0",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "registryBaseUrl": "https://pypi.org",
+      "identifier": "popia-kit",
+      "version": "1.2.0",
+      "runtimeHint": "uvx",
+      "transport": {
+        "type": "stdio"
+      },
+      "packageArguments": [
+        {
+          "type": "positional",
+          "value": "mcp"
+        }
+      ]
+    }
+  ]
+}

@@ -55,6 +55,17 @@ class TestCli(unittest.TestCase):
         self.assertEqual(pkg["version"], cli.VERSION)
         self.assertTrue(re.match(r"^\d+\.\d+\.\d+$", cli.VERSION))
 
+    def test_mcp_registry_listing_matches(self):
+        import json
+        server = json.loads((ROOT / "server.json").read_text(encoding="utf-8"))
+        self.assertEqual(server["version"], cli.VERSION)
+        self.assertEqual([p["version"] for p in server["packages"]], [cli.VERSION])
+        self.assertEqual(server["packages"][0]["identifier"], "popia-kit")
+        self.assertLessEqual(len(server["description"]), 100)
+        # The registry proves we own the PyPI package by finding this line in the README.
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("mcp-name: %s -->" % server["name"], readme)
+
 
 if __name__ == "__main__":
     unittest.main()

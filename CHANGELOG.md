@@ -7,11 +7,18 @@ Legal content merged without a legal reviewer is marked `pending legal review` (
 ## [Unreleased]
 
 ### Added
+- `popia-kit init`: sets up a project in one command. Finds the AI tools in use and adds the POPIA rules file for each (Claude Code, Cursor, Copilot, Windsurf, Gemini, AGENTS.md), a scan workflow and a starter `.popiaignore`. Shared files such as `CLAUDE.md` get a marked block that later runs refresh. Existing files are left alone unless `--force`, and nothing is written through a symlink.
+- Scanner baseline: `--write-baseline FILE` records today's findings as hashes, rule ids and paths, and `--baseline FILE` reports only new ones. A finding keeps its match when code above it moves.
+- Scanner `--changed-since REF`: only findings in files changed since the merge base with REF, for pull request checks.
+- Scanner `--report FORMAT=FILE`: write more report formats from the same scan.
+- GitHub Action: `baseline`, `changed-since`, `site-url`, `site-fail-on` and `scan` inputs. With `site-url` the action runs the passive live site check, and `examples/github-workflow-site-check.yml` runs it every Monday.
+- `server.json` and the README `mcp-name` line for the official MCP Registry. Publishing steps are in docs/releasing.md.
 - `popia-kit operators`: lists every third-party API or SDK a codebase calls and the personal information that appears to reach each one. It reads dependency manifests (package.json, requirements files, pyproject.toml, Pipfile), JavaScript, TypeScript and Python imports, the client objects made from them, and API hosts in fetch calls, script tags and form actions. Each row shows where it was found, the fields seen near its calls, what the service receives by design, and flags for special personal information (s26) and children (s34). Output as Markdown, JSON or a CSV with empty hosting country, s72 basis and operator agreement columns, so it can start the operator register (s20, s21) and the list of cross-border transfers (s72). Also the MCP tool `popia_operators`, and a step in the skill's Audit mode. Field matches are leads to confirm.
 - A page for site owners on the site checker: what it requests, that it stops at bot protection, and how to allow it for one check or block it (`docs/site-check-bot.md`).
 - A false positive issue template, so reports name the rule, a small example and the expected result.
 
 ### Changed
+- The GitHub Action scans once and writes the JSON, Markdown and SARIF reports from that scan, instead of scanning three times.
 - When the site check cannot read a site, the CLI and MCP tool now point to the code scanner and the AI skill, which bot protection does not affect.
 - The site check User-Agent now links to the page for site owners, and the blocked message says the site owner can allow the checker for one check. The `popia-site-check/` token is unchanged.
 - README and quickstart link to popiakit.co.za and the browser site check, and the README has PyPI, CI, licence and site check badges.

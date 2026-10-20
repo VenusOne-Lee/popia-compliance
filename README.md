@@ -8,6 +8,8 @@ An open-source skill that helps you build websites and apps that respect POPIA (
 
 Maintained by Venus One (Venus ARC (Pty) Ltd) and contributors.
 
+<!-- mcp-name: io.github.VenusOne-Lee/popia-kit -->
+
 > [!IMPORTANT]
 > **Engineering guidance, not legal advice.** This project has **no legal reviewer yet**. Content is researched from the Act, the Regulations and the Information Regulator's publications, but has not been reviewed by an attorney. A clean scan is not a compliance certificate. Read [DISCLAIMER.md](DISCLAIMER.md). Attorneys: [we'd like your help](GOVERNANCE.md#the-legal-reviewer-seat).
 
@@ -73,7 +75,10 @@ To keep it installed: `pipx install popia-kit`, then use `popia-kit` anywhere. F
 
 | Command | What it does |
 |---|---|
+| `popia-kit init` | Set up a project: the POPIA rules file for each AI tool you use, a GitHub workflow that runs the scan, and a starter `.popiaignore`. Never overwrites your own content |
 | `popia-kit scan ./my-app --format md --out popia-scan.md` | Scan a codebase (43 rules). Also `--format json` or `--format sarif` |
+| `popia-kit scan . --write-baseline popia-baseline.json` | Record today's findings, then `--baseline popia-baseline.json` reports only new ones |
+| `popia-kit scan . --changed-since origin/main` | Report only findings in files changed since a branch |
 | `popia-kit operators ./my-app --format csv --out operators.csv` | Every third-party API or SDK the code calls, and the personal information that appears to reach each. Your operator and cross-border list |
 | `popia-kit site-check https://example.co.za --out site-check.md` | Passive check of a live site you own |
 | `popia-kit supabase sql` then `popia-kit supabase check result.json` | Read-only check of a Supabase database. Reads settings, never data |

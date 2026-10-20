@@ -42,6 +42,7 @@ Issues = "https://github.com/VenusOne-Lee/popia-compliance/issues"
 
 [project.scripts]
 popia-kit = "popia_kit.cli:main"
+popia-init = "popia_kit.cli:run_init"
 popia-scan = "popia_kit.cli:run_scan"
 popia-operators = "popia_kit.cli:run_operators"
 popia-site-check = "popia_kit.cli:run_site_check"
@@ -59,6 +60,8 @@ packages = [
   "popia_kit.data.references",
   "popia_kit.data.packs",
   "popia_kit.data.templates",
+  "popia_kit.data.adapters",
+  "popia_kit.data.examples",
 ]
 include-package-data = false
 
@@ -69,6 +72,8 @@ include-package-data = false
 "popia_kit.data.references" = "references"
 "popia_kit.data.packs" = "packs"
 "popia_kit.data.templates" = "templates"
+"popia_kit.data.adapters" = "adapters"
+"popia_kit.data.examples" = "examples"
 
 [tool.setuptools.package-data]
 "popia_kit" = ["sql/*.sql"]
@@ -76,3 +81,12 @@ include-package-data = false
 "popia_kit.data.references" = ["*.md"]
 "popia_kit.data.packs" = ["*.md"]
 "popia_kit.data.templates" = ["*.md", "*.csv", "*.json"]
+"popia_kit.data.adapters" = [
+  "claude/CLAUDE.md",
+  "agents/AGENTS.md",
+  "gemini/GEMINI.md",
+  "cursor/.cursor/rules/popia.mdc",
+  "copilot/.github/copilot-instructions.md",
+  "windsurf/.windsurf/rules/popia.md",
+]
+"popia_kit.data.examples" = ["github-workflow-popia-scan.yml"]
