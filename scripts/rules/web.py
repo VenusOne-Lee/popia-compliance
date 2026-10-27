@@ -19,7 +19,7 @@ SAFE_DEFAULTS = re.compile(r"\bcookies\.set\s*\(")
 COOKIE_SETTING = re.compile(r"\b(SESSION_COOKIE_(?:SECURE|HTTPONLY))\b['\"]?\]?\s*=\s*False\b")
 SESSION_MW = re.compile(r"\b(?:session|cookieSession)\s*\(")
 RAW_HEADER = re.compile(r"Set-Cookie['\"]?\s*[,:]\s*[`'\"]\s*(?:__(?:Host|Secure)-)?(\w+)=([^`'\"]*)", re.I)
-STRING = re.compile(r"""(['"`])(?:\\.|(?!\1).)*\1""", re.S)
+STRING = re.compile(r"""(['"`])(?:\\.|(?!\1)[^\\])*\1""", re.S)
 
 
 def _call_args(text, start):
