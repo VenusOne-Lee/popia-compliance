@@ -64,15 +64,16 @@
     },
     {
       "name": "popia_generate_pack",
-      "description": "Generate a POPIA document pack (privacy notice, ROPA, retention schedule and related drafts) from questionnaire answers. Returns file contents, and writes them to out_dir if given. Drafts need human and legal review.",
+      "description": "Generate a POPIA document pack (privacy notice, ROPA, retention schedule and related drafts) from questionnaire answers. With from_path, the third parties, data categories and AI providers found in that codebase fill the questions the answers leave out. Returns file contents, and writes them to out_dir if given. Drafts need human and legal review.",
       "local_only": true,
       "inputSchema": {
         "type": "object",
         "properties": {
           "answers": {"type": "object", "description": "Questionnaire answers keyed by question id. See scripts/popia_pack.py load_questions()."},
-          "out_dir": {"type": "string", "description": "Optional directory to write the files into."}
+          "out_dir": {"type": "string", "description": "Optional directory to write the files into."},
+          "from_path": {"type": "string", "description": "Optional path to a local codebase. Drafts operators, data categories, analytics tools and AI answers from it. Your answers win."}
         },
-        "required": ["answers"],
+        "required": [],
         "additionalProperties": false
       }
     },

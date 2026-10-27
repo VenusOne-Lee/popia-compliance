@@ -483,11 +483,17 @@ def tool_popia_site_check(args: dict) -> str:
 
 
 def tool_popia_generate_pack(args: dict) -> str:
-    answers = args.get("answers")
+    answers = args.get("answers", {})
     if not isinstance(answers, dict):
         raise RpcError(INVALID_PARAMS, "answers must be an object")
     out_dir = _str(args, "out_dir", False)
+    from_path = _str(args, "from_path", False)
     pk = _import("popia_pack")
+    if from_path:
+        p = _safe_scan_path(from_path)
+        if not p.exists():
+            raise ToolError("Path not found.")
+        answers = pk.merge_answers(pk.answers_from_code(str(p)), answers)
     target = _safe_out_dir(out_dir) if out_dir else None
     files = pk.generate(answers, str(target) if target else None)
     md = ["# POPIA document pack", "",
