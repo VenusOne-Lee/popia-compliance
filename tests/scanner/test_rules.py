@@ -125,6 +125,71 @@ class RuntimeSecretsTest(unittest.TestCase):
         self.assertEqual(bad, [], bad)
 
 
+class CookieFlagsTest(unittest.TestCase):
+    """SEC-021: session cookies set without HttpOnly or Secure."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def hits(self, rel, text):
+        p = self.root / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(text, encoding="utf-8")
+        res = popia_scan.scan(str(self.root), rule_ids=["SEC-021"])
+        p.unlink()
+        return [f for f in res["findings"] if f["rule_id"] == "SEC-021"]
+
+    def test_bad_cases_fire(self):
+        bad = {
+            "server/express.js": "res.cookie('session', token);\n",
+            "server/express-false.js": "res.cookie('sid', token, {\n  httpOnly: true,\n  secure: false,\n});\n",
+            "app/actions.ts": "cookies().set('auth_token', jwt, { secure: true });\n",
+            "app/actions-object.ts": "cookies().set({ name: 'session', value: id, httpOnly: true });\n",
+            "src/hono.ts": "setCookie(c, 'session_id', id, { path: '/' });\n",
+            "src/fastify.ts": "reply.setCookie('session', id, { httpOnly: true });\n",
+            "src/hooks.server.ts": "cookies.set('session', id, { path: '/', httpOnly: false });\n",
+            "api/raw.ts": "res.setHeader('Set-Cookie', `session=${id}; Path=/; HttpOnly`);\n",
+            "app/views.py": "response.set_cookie('sessionid', value, max_age=3600)\n",
+            "app/settings.py": "SESSION_COOKIE_SECURE = False\n",
+            "app/config.py": "app.config['SESSION_COOKIE_HTTPONLY'] = False\n",
+            "server/app.js": "app.use(session({ secret: s, cookie: { secure: false } }));\n",
+        }
+        for rel, text in bad.items():
+            self.assertTrue(self.hits(rel, text), rel)
+
+    def test_clean_cases_do_not_fire(self):
+        clean = {
+            "server/express.js": "res.cookie('session', token, { httpOnly: true, secure: true, sameSite: 'lax' });\n",
+            "server/env.js": "res.cookie('session', t, { httpOnly: true, secure: process.env.NODE_ENV === 'production' });\n",
+            "server/opts.js": "res.cookie('session', token, cookieOptions);\n",
+            "server/spread.js": "res.cookie('session', token, { ...base, maxAge: 1000 });\n",
+            "server/theme.js": "res.cookie('theme', 'dark');\n",
+            "server/csrf.js": "res.cookie('csrf', value, { sameSite: 'strict' });\n",
+            "src/hooks.server.ts": "cookies.set('session', id, { path: '/' });\n",
+            "src/hono.ts": "setCookie(c, 'session_id', id, { httpOnly: true, secure: true });\n",
+            "src/fastify.ts": "reply.setCookie('session', id, { httpOnly: true, secure: true });\n",
+            "api/raw.ts": "res.setHeader('Set-Cookie', `session=${id}; Path=/; HttpOnly; Secure`);\n",
+            "app/views.py": "response.set_cookie('sessionid', value, httponly=True, secure=True, samesite='Lax')\n",
+            "app/kwargs.py": "response.set_cookie('sessionid', value, **COOKIE_ARGS)\n",
+            "app/settings.py": "SESSION_COOKIE_SECURE = True\nSESSION_COOKIE_HTTPONLY = True\n",
+        }
+        for rel, text in clean.items():
+            self.assertEqual(self.hits(rel, text), [], rel)
+
+    def test_tests_are_skipped(self):
+        self.assertEqual(self.hits("tests/test_login.py", "response.set_cookie('sessionid', v)\n"), [])
+
+    def test_extra_names_the_missing_flag(self):
+        found = self.hits("server/a.js", "res.cookie('session', token, { httpOnly: true });\n")
+        self.assertEqual(len(found), 1)
+        self.assertIn("Secure", found[0]["extra"])
+        self.assertNotIn("HttpOnly", found[0]["extra"])
+
+
 class FormatTest(unittest.TestCase):
     def test_formats(self):
         res = popia_scan.scan(str(DEMO))

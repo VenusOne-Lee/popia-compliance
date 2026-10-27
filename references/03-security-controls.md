@@ -42,7 +42,7 @@ Each control has an ID used in audit reports.
 | SEC-IAM-01 | MFA on all admin, cloud console, database, CRM, email, domain registrar, code host, CI accounts | IdP report | ASVS V2, ISO 8.5, CIS 6.3-6.5 |
 | SEC-IAM-02 | Passwords hashed with argon2id/bcrypt/scrypt; breached-password check; no max length < 64 | Code, config | ASVS V2.4 |
 | SEC-IAM-03 | Account enumeration resistant login/reset (generic messages, rate limits) | Test | ASVS V2.2 |
-| SEC-IAM-04 | Session tokens: HttpOnly, Secure, SameSite; short-lived; rotated on privilege change; invalidated on logout | Headers, code | ASVS V3 |
+| SEC-IAM-04 | Session tokens: HttpOnly, Secure, SameSite; short-lived; rotated on privilege change; invalidated on logout | Scanner (SEC-021), site_check, code | ASVS V3 |
 | SEC-IAM-05 | Joiner/mover/leaver process; access removed same day on exit | Tickets | ISO 5.18, CIS 6.1-6.2 |
 | SEC-IAM-06 | No shared accounts; service accounts least-privilege and inventoried | IAM export | ISO 5.16, CIS 5 |
 | SEC-IAM-07 | Quarterly access review for systems holding PI | Review record | ISO 5.18 |

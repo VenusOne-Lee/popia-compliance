@@ -3,7 +3,7 @@
 popia-kit: one entry point for the POPIA Kit tools.
 
     popia-kit init                           set up rules files, a scan workflow and .popiaignore
-    popia-kit scan ./my-app                  code scanner (43 rules)
+    popia-kit scan ./my-app                  code scanner (44 rules)
     popia-kit operators ./my-app             third parties and the data sent to each
     popia-kit site-check https://example.com passive live site check
     popia-kit supabase sql                   read-only Supabase database check
