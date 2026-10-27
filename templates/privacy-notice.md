@@ -128,7 +128,11 @@ We do not transfer special personal information or children's personal informati
 
 {{/if}}
 {{else}}
+{{#if operator_country_unknown}}
+[[VERIFY: add the processing country for every operator. Until then this section cannot say whether personal information leaves South Africa.]]
+{{else}}
 We do not transfer your personal information outside South Africa. Our systems are hosted in {{hosting_region}}.
+{{/if}}
 {{/if}}
 
 {{#if has_marketing}}

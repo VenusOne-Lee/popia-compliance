@@ -67,6 +67,14 @@ class TestServer(unittest.TestCase):
             self.assertTrue(res["isError"])
             self.assertIn("popia_pack", res["content"][0]["text"])
 
+    def test_generate_pack_from_path(self):
+        r = self.rpc("tools/call", {"name": "popia_generate_pack",
+                                    "arguments": {"from_path": str(ROOT / "tests" / "fixtures" / "operators-app")}})
+        self.assertFalse(r["result"]["isError"], r["result"])
+        self.assertIn("| Stripe | Payments |", r["result"]["content"][0]["text"])
+        r = self.rpc("tools/call", {"name": "popia_generate_pack", "arguments": {"from_path": "~/.ssh"}})
+        self.assertTrue(r["result"]["isError"])
+
     def test_operators_tool(self):
         r = self.rpc("tools/call", {"name": "popia_operators",
                                     "arguments": {"path": str(ROOT / "tests" / "fixtures" / "operators-app"),

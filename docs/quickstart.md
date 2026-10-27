@@ -59,6 +59,8 @@ Fix anything rated critical or high. A lead-capture table that allows anonymous 
 uvx popia-kit pack --interactive --out ./compliance-pack
 ```
 
+Once you have code, `--from-code ./my-app` fills the operators, data categories and AI answers from what the code calls. It saves the answers to `answers.json` for you to check and complete.
+
 Have someone qualified review the drafts before you publish them.
 
 ---

@@ -301,5 +301,81 @@ class CliTests(unittest.TestCase):
             self.assertEqual(sorted(os.listdir(out)), sorted(EXPECTED_FILES))
 
 
+OPERATORS_APP = ROOT / "tests" / "fixtures" / "operators-app"
+
+
+class FromCodeTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.code = popia_pack.answers_from_code(str(OPERATORS_APP), ["operators-app.co.za"])
+
+    def test_operators_drafted_without_countries(self):
+        ops = {o["name"]: o for o in self.code["operators"]}
+        self.assertIn("Stripe", ops)
+        self.assertEqual(ops["Stripe"]["service"], "Payments")
+        self.assertIn("identity or passport numbers", ops["Stripe"]["data"])
+        for o in ops.values():
+            self.assertNotIn("country", o)
+            self.assertNotIn("s72_basis", o)
+            self.assertEqual(o["agreement"], "unknown")
+        self.assertFalse(any(n.startswith("Unknown") for n in ops))
+
+    def test_data_categories_are_questionnaire_options(self):
+        q = {x["id"]: x for x in popia_pack.load_questions()}
+        self.assertTrue(self.code["data_categories"])
+        for c in self.code["data_categories"]:
+            self.assertIn(c, q["data_categories"]["options"])
+        self.assertIn("SA ID or passport number", self.code["data_categories"])
+
+    def test_ai_children_and_special(self):
+        self.assertTrue(self.code["ai_features"])
+        self.assertIn("Anthropic", self.code["ai_provider"])
+        self.assertTrue(self.code["children"])
+        self.assertNotIn("special_pi", self.code)
+        fc = self.code["_from_code"]
+        self.assertIn("Anthropic", fc["special_pi_near"])
+        self.assertIn("Twilio", fc["children_near"])
+        self.assertEqual(fc["unknown_hosts"], ["api.partner-crm.example.co"])
+
+    def test_own_answers_win(self):
+        mine = {"operators": [{"name": "Own Host", "service": "Hosting", "country": "South Africa"}],
+                "children": False}
+        merged = popia_pack.merge_answers(self.code, mine)
+        self.assertEqual(merged["operators"], mine["operators"])
+        self.assertFalse(merged["children"])
+        self.assertNotIn("operators", merged["_from_code"]["filled"])
+        self.assertIn("data_categories", merged["_from_code"]["filled"])
+
+    def test_notice_does_not_claim_no_transfers(self):
+        files = popia_pack.generate(self.code)
+        notice = files["privacy-notice.md"]
+        self.assertNotIn("We do not transfer your personal information outside South Africa", notice)
+        self.assertIn("VERIFY: add the processing country for every operator", notice)
+        self.assertIn("| Stripe | Payments |", notice)
+        self.assertIn("## Found in your code", files["README.md"])
+        rows = list(csv.reader(io.StringIO(files["operator-register.csv"])))
+        self.assertTrue(all(r[5] == "VERIFY" for r in rows[1:]), rows)
+
+    def test_known_countries_still_say_no_transfer(self):
+        answers = json.loads(ANSWERS.read_text(encoding="utf-8"))
+        for op in answers.get("operators") or []:
+            op["country"] = "South Africa"
+        answers["cross_border_countries"] = []
+        notice = popia_pack.generate(answers)["privacy-notice.md"]
+        self.assertIn("We do not transfer your personal information outside South Africa", notice)
+
+    def test_cli_from_code(self):
+        with tempfile.TemporaryDirectory() as d:
+            out = os.path.join(d, "pack")
+            r = subprocess.run([sys.executable, str(ROOT / "scripts" / "popia_pack.py"), "--from-code",
+                                str(OPERATORS_APP), "--ignore-host", "operators-app.co.za", "--out", out],
+                               capture_output=True, text=True)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertIn("Drafted answers from code", r.stdout)
+            saved = json.loads(Path(out, "answers.json").read_text(encoding="utf-8"))
+            self.assertIn("operators", saved)
+            self.assertIn("privacy-notice.md", os.listdir(out))
+
+
 if __name__ == "__main__":
     unittest.main()

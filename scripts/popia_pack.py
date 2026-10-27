@@ -6,6 +6,7 @@ Stdlib only. Python 3.8+.
 
     python3 popia_pack.py --answers answers.json --out ./compliance-pack
     python3 popia_pack.py --interactive [--out ./compliance-pack] [--save-answers answers.json]
+    python3 popia_pack.py --from-code ./my-app [--answers answers.json] [--out ./compliance-pack]
     python3 popia_pack.py --print-questions
     python3 popia_pack.py --example [example-answers.json]
 
@@ -446,6 +447,8 @@ def build_context(answers: Dict[str, Any], questions: Optional[List[Dict[str, An
             countries.append(c)
     ctx["cross_border_countries"] = countries
     ctx["has_cross_border"] = bool(countries)
+    # An operator with no country means we cannot yet say whether information leaves South Africa.
+    ctx["operator_country_unknown"] = any(not op.get("country") for op in ops or [])
     ctx["cross_border_countries_text"] = ", ".join(countries) if countries else None
     foreign_ops = [op.get("name") for op in ops or [] if op.get("country") and not _is_sa(op.get("country"))]
     ctx["cross_border_recipient"] = ", ".join(n for n in foreign_ops if n) or None
@@ -600,7 +603,7 @@ def build_operator_register(ctx: Dict[str, Any]) -> str:
             _cell(op, "data", "operators.data"),
             _cell(op, "country", "operators.country"),
             "yes" if foreign else ("no" if country else "VERIFY"),
-            (op.get("s72_basis") or "VERIFY") if foreign else "Not applicable",
+            (op.get("s72_basis") or "VERIFY") if foreign else ("Not applicable" if country else "VERIFY"),
             op.get("agreement") or "unknown",
             "VERIFY",
             "VERIFY",
@@ -790,6 +793,8 @@ def build_readme(ctx: Dict[str, Any], files: Dict[str, str], questions: List[Dic
     else:
         lines.append("None.")
 
+    lines += _from_code_lines(ctx)
+
     lines += [
         "",
         "## Before you publish",
@@ -848,6 +853,150 @@ def generate(answers: Dict[str, Any], out_dir: Optional[str] = None,
             with open(os.path.join(out_dir, name), "w", encoding="utf-8", newline="") as fh:
                 fh.write(content)
     return ordered
+
+
+# --------------------------------------------------------------------------
+# Answers from code
+# --------------------------------------------------------------------------
+
+# popia_operators personal information categories -> questionnaire data_categories options.
+CODE_DATA_CATEGORIES = {
+    "name": "Identity details (name, title)",
+    "contact": "Contact details (email, phone, address)",
+    "address": "Contact details (email, phone, address)",
+    "id_number": "SA ID or passport number",
+    "dob": "Date of birth",
+    "location": "Location information",
+    "online": "Device and online identifiers (IP address, cookie IDs)",
+    "identifier": "Account and login details",
+    "free_text": "Communications and support messages",
+}
+# Vendor categories whose services receive these by design.
+CODE_CATEGORY_DATA = {
+    "analytics": "Device and online identifiers (IP address, cookie IDs)",
+    "replay": "Device and online identifiers (IP address, cookie IDs)",
+    "errors": "Device and online identifiers (IP address, cookie IDs)",
+    "email": "Contact details (email, phone, address)",
+    "messaging": "Contact details (email, phone, address)",
+    "payments": "Payment and transaction records",
+    "support": "Communications and support messages",
+}
+CODE_SERVICES = {
+    "ai": "AI provider", "analytics": "Analytics", "automation": "Workflow automation",
+    "backend": "Database, authentication and hosting", "cloud": "Cloud hosting", "crm": "CRM",
+    "data": "Data storage", "email": "Email delivery", "errors": "Error monitoring", "forms": "Forms",
+    "logs": "Logging", "maps": "Maps", "messaging": "SMS and messaging", "payments": "Payments",
+    "replay": "Session replay", "search": "Search", "support": "Customer support",
+}
+
+
+def answers_from_code(path: str, ignore_hosts: Optional[List[str]] = None) -> Dict[str, Any]:
+    """Draft answers from the third parties and fields popia_operators finds in a codebase.
+
+    Fills operators, data_categories, analytics_tools, ai_features and ai_provider, and sets
+    children only when children's fields reach a third party. Countries, agreements and s72
+    grounds are left blank: code cannot tell where a vendor stores data. The "_from_code" key
+    records what was filled and from where, for the pack README.
+    """
+    po_dir = str(Path(__file__).resolve().parent)
+    if po_dir not in sys.path:
+        sys.path.insert(0, po_dir)
+    import popia_operators  # noqa: E402  (imported here so the pack works without the scanner)
+
+    inv = popia_operators.inventory(path, ignore_hosts)
+    ops = [o for o in inv["operators"] if not o["dev_only"]]
+    known = [o for o in ops if o["category"] != "unknown"]
+
+    def where(o: Dict[str, Any]) -> str:
+        locs = o.get("locations") or []
+        return ", ".join("%s:%s" % (loc["file"], loc["line"]) for loc in locs[:3]) or "manifest"
+
+    operators, analytics, cats, filled = [], [], [], []
+    for o in known:
+        data = [o["by_design"]] if o["by_design"] else []
+        data += [f["label"] for f in o["personal_information"]]
+        rec: Dict[str, Any] = {"name": o["vendor"], "service": CODE_SERVICES.get(o["category"], o["category"]),
+                               "agreement": "unknown"}
+        if data:
+            rec["data"] = "; ".join(data)
+        operators.append(rec)
+        if o["category"] in ("analytics", "replay"):
+            analytics.append({"name": o["vendor"], "purpose": CODE_SERVICES[o["category"]]})
+        for c in [CODE_CATEGORY_DATA.get(o["category"])] + [CODE_DATA_CATEGORIES.get(f["category"])
+                                                             for f in o["personal_information"]]:
+            if c and c not in cats:
+                cats.append(c)
+        filled.append({"vendor": o["vendor"], "service": rec["service"], "found_at": where(o)})
+
+    answers: Dict[str, Any] = {}
+    if operators:
+        answers["operators"] = operators
+    if cats:
+        answers["data_categories"] = [c for c in _questionnaire_options("data_categories") if c in cats]
+    if analytics:
+        answers["analytics_tools"] = analytics
+    ai = [o["vendor"] for o in known if o["category"] == "ai"]
+    if ai:
+        answers["ai_features"] = True
+        answers["ai_provider"] = ", ".join(ai)
+    if any(o["children"] for o in ops):
+        answers["children"] = True
+    answers["_from_code"] = {
+        "target": inv["target"],
+        "scanned_at": inv["scanned_at"],
+        "operators": filled,
+        "unknown_hosts": [h for o in ops if o["category"] == "unknown" for h in o["hosts"]],
+        "special_pi_near": [_vendor_label(o) for o in ops if o["special_pi"]],
+        "children_near": [_vendor_label(o) for o in ops if o["children"]],
+        "filled": sorted(k for k in answers if not k.startswith("_")),
+    }
+    return answers
+
+
+def _vendor_label(o: Dict[str, Any]) -> str:
+    return ", ".join(o["hosts"]) if o["category"] == "unknown" and o["hosts"] else o["vendor"]
+
+
+def _questionnaire_options(qid: str) -> List[str]:
+    for q in load_questions():
+        if q["id"] == qid:
+            return list(q.get("options") or [])
+    return []
+
+
+def merge_answers(from_code: Dict[str, Any], answers: Dict[str, Any]) -> Dict[str, Any]:
+    """Your own answers win. Values found in code only fill questions you left out."""
+    merged = copy.deepcopy(from_code)
+    merged.update(copy.deepcopy(answers))
+    if "_from_code" in merged:
+        merged["_from_code"]["filled"] = [k for k in merged["_from_code"]["filled"] if k not in answers]
+    return merged
+
+
+def _from_code_lines(ctx: Dict[str, Any]) -> List[str]:
+    fc = ctx.get("_from_code")
+    if not fc:
+        return []
+    lines = ["", "## Found in your code", "",
+             "These answers were drafted from `popia-kit operators` on %s. Code shows which services "
+             "are called, not who they are or where they store data. Confirm each one, then add the "
+             "processing country, operator agreement and s72 ground." % fc.get("scanned_at", "")]
+    lines.append("")
+    lines.append("Filled from code: %s." % (", ".join(fc.get("filled") or []) or "nothing"))
+    if fc.get("operators"):
+        lines += ["", "| Third party | Service | Found at |", "|---|---|---|"]
+        for o in fc["operators"]:
+            lines.append("| %s | %s | %s |" % (o["vendor"], o["service"], o["found_at"]))
+    if fc.get("unknown_hosts"):
+        lines += ["", "Hosts with no known owner, left out of the notice: %s. Find out who runs each one. "
+                  "If it receives personal information, add it as an operator." % ", ".join(fc["unknown_hosts"])]
+    if fc.get("special_pi_near"):
+        lines += ["", "Special personal information (s26) appears near calls to: %s. Answer special_pi "
+                  "and check a s27 ground. This tool does not fill it in." % ", ".join(fc["special_pi_near"])]
+    if fc.get("children_near"):
+        lines += ["", "Children's information (s34) appears near calls to: %s, so children is set to yes. "
+                  "Answer the children questions." % ", ".join(fc["children_near"])]
+    return lines
 
 
 # --------------------------------------------------------------------------
@@ -949,14 +1098,19 @@ def _print_questions(questions: List[Dict[str, Any]]) -> None:
 def main(argv: Optional[List[str]] = None) -> int:
     ap = argparse.ArgumentParser(
         description="Generate a draft POPIA compliance pack. Not legal advice.")
-    mode = ap.add_mutually_exclusive_group(required=True)
+    mode = ap.add_mutually_exclusive_group()
     mode.add_argument("--answers", help="answers JSON file")
     mode.add_argument("--interactive", action="store_true", help="ask questions on the command line")
     mode.add_argument("--print-questions", action="store_true", help="list the questionnaire")
     mode.add_argument("--example", nargs="?", const="example-answers.json", metavar="PATH",
                       help="write example answers for a fictional company (default: example-answers.json)")
+    ap.add_argument("--from-code", metavar="PATH",
+                    help="draft answers from the third parties and fields found in this codebase; "
+                         "with --answers, your answers win")
+    ap.add_argument("--ignore-host", action="append", default=[], metavar="HOST",
+                    help="with --from-code, a host that is your own API (repeatable)")
     ap.add_argument("--out", default="./compliance-pack", help="output folder (default: ./compliance-pack)")
-    ap.add_argument("--save-answers", metavar="PATH", help="with --interactive, save answers to this file")
+    ap.add_argument("--save-answers", metavar="PATH", help="with --interactive or --from-code, save answers to this file")
     ap.add_argument("--templates", help="templates folder (default: repo templates/)")
     ap.add_argument("--version", action="version", version="popia_pack " + __version__)
     args = ap.parse_args(argv)
@@ -974,6 +1128,10 @@ def main(argv: Optional[List[str]] = None) -> int:
         print("Wrote example answers to %s" % args.example)
         print("Next: run the pack command again with --answers %s --out %s" % (args.example, args.out))
         return 0
+    if not (args.answers or args.interactive or args.from_code):
+        ap.error("one of --answers, --interactive, --from-code, --print-questions or --example is required")
+    if args.from_code and args.interactive:
+        ap.error("--from-code works with --answers, not --interactive")
     if args.interactive:
         answers = ask_interactive(questions)
         save = args.save_answers or os.path.join(args.out, "answers.json")
@@ -982,9 +1140,20 @@ def main(argv: Optional[List[str]] = None) -> int:
             json.dump(answers, fh, indent=2, ensure_ascii=False)
             fh.write("\n")
         print("\nSaved answers to %s" % save)
-    else:
+    elif args.answers:
         with open(args.answers, encoding="utf-8") as fh:
             answers = json.load(fh)
+    else:
+        answers = {}
+    if args.from_code:
+        answers = merge_answers(answers_from_code(args.from_code, args.ignore_host), answers)
+        save = args.save_answers or os.path.join(args.out, "answers.json")
+        os.makedirs(os.path.dirname(os.path.abspath(save)), exist_ok=True)
+        with open(save, "w", encoding="utf-8") as fh:
+            json.dump(answers, fh, indent=2, ensure_ascii=False)
+            fh.write("\n")
+        print("Drafted answers from code: %s" % (", ".join(answers["_from_code"]["filled"]) or "nothing new"))
+        print("Saved answers to %s. Edit them and run again with --answers." % save)
 
     files = generate(answers, args.out, args.templates)
     todos = sorted({m for c in files.values() for m in TODO_RE.findall(c)})

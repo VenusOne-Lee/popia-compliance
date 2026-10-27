@@ -83,6 +83,7 @@ To keep it installed: `pipx install popia-kit`, then use `popia-kit` anywhere. F
 | `popia-kit site-check https://example.co.za --out site-check.md` | Passive check of a live site you own |
 | `popia-kit supabase sql` then `popia-kit supabase check result.json` | Read-only check of a Supabase database. Reads settings, never data |
 | `popia-kit pack --interactive --out ./compliance-pack` | Answer questions, get draft notices, PAIA manual, ROPA and more |
+| `popia-kit pack --from-code ./my-app --out ./compliance-pack` | Draft the pack with the third parties, data categories and AI providers found in your code filled in |
 | `popia-kit badge popia-scan.json --out popia-badge.svg` | Dated badge from a scan or site check result |
 | `popia-kit id validate <id number>` | Check an SA ID number without logging it |
 | `popia-kit mcp` | Run the MCP server on stdio |
