@@ -107,6 +107,23 @@ class _PageParser(HTMLParser):
             self._in_a["text"] += data
 
 
+NON_ENTRY_INPUTS = {"hidden", "submit", "button", "reset", "image"}
+
+
+def _collects_on_page(page: "_PageParser", host: str, trackers: int, cookies: int) -> bool:
+    """True when the page shows a way to collect personal information: a form, an entry field,
+    a tracker, a cookie, or an iframe from another host."""
+    if page.forms or trackers or cookies:
+        return True
+    if any((i.get("type") or "text").lower() not in NON_ENTRY_INPUTS for i in page.inputs):
+        return True
+    for src in page.iframes:
+        h = (urlparse(urljoin(f"https://{host}/", src)).hostname or "").lower()
+        if h and h != host.lower():
+            return True
+    return False
+
+
 class BlockedTarget(ValueError):
     """Raised when a URL or redirect points somewhere site_check must not request."""
 
@@ -397,11 +414,21 @@ def check(url: str, timeout: float = 15, probe_paths: bool = True, block_private
                                "Open the site in a browser and confirm the footer links the privacy notice and PAIA "
                                "manual. Server rendering or prerendering makes them visible to search engines and checks."))
     if notices["privacy"] is False:
-        findings.append(_f("WEB-015", "No privacy notice link found", "high", "s18", "No link or common path",
-                           "Publish a privacy notice and link it in the footer and next to every form."))
+        # Severity follows what the page visibly collects. It stays at medium, never lower: server logs
+        # still hold IP addresses, and a passive check cannot see what the backend collects.
+        if _collects_on_page(page, parsed.hostname or "", len(trackers), len(cookies)):
+            findings.append(_f("WEB-015", "No privacy notice link found", "high", "s18", "No link or common path",
+                               "Publish a privacy notice and link it in the footer and next to every form."))
+        else:
+            findings.append(_f("WEB-015", "No privacy notice link found", "medium", "s18",
+                               "No link or common path. No forms, cookies or trackers seen on this page",
+                               "Publish a short privacy notice and link it in the footer. Server logs still record "
+                               "IP addresses, which are personal information."))
     if notices["paia"] is False:
         findings.append(_f("WEB-016", "No PAIA manual link found", "medium", "PAIA s51", "No PAIA link or common path",
-                           "Publish the PAIA manual and link it in the footer."))
+                           "Publish the PAIA manual and link it in the footer. PAIA s51 applies to private bodies, "
+                           "such as a company or a person running a business. A personal project that is not a "
+                           "business may not need one."))
     if trackers and notices["cookie"] is False:
         findings.append(_f("WEB-017", "Trackers present but no cookie notice link", "medium", "s18",
                            "", "Publish a cookie notice listing each tool, purpose and provider."))

@@ -17,12 +17,15 @@ Legal content merged without a legal reviewer is marked `pending legal review` (
 - A page for site owners on the site checker: what it requests, that it stops at bot protection, and how to allow it for one check or block it (`docs/site-check-bot.md`).
 - Scanner rule SEC-021: a session or auth cookie set in server code without HttpOnly or Secure (s19). It reads Express `res.cookie`, Next.js `cookies().set`, Hono and Fastify `setCookie`, SvelteKit `cookies.set`, Flask and Django `set_cookie`, raw `Set-Cookie` headers, `express-session` options, and `SESSION_COOKIE_SECURE` or `SESSION_COOKIE_HTTPONLY` set to False. Options passed as a variable are only checked for an explicit false. Low confidence.
 - A false positive issue template, so reports name the rule, a small example and the expected result.
+- Copy-paste security header fixes for nginx, Apache, Netlify, Cloudflare, Vercel, Next.js, Express, FastAPI and Django (`docs/security-headers.md`). The site check report links to it from the header findings (WEB-003 to WEB-008).
 
 ### Changed
 - The GitHub Action scans once and writes the JSON, Markdown and SARIF reports from that scan, instead of scanning three times.
 - When the site check cannot read a site, the CLI and MCP tool now point to the code scanner and the AI skill, which bot protection does not affect.
 - The site check User-Agent now links to the page for site owners, and the blocked message says the site owner can allow the checker for one check. The `popia-site-check/` token is unchanged.
 - README and quickstart link to popiakit.co.za and the browser site check, and the README has PyPI, CI, licence and site check badges.
+- Site check: a missing privacy notice link (WEB-015) is high only when the page shows a way to collect personal information: a form, an entry field, a tracker, a cookie or an iframe from another site. Otherwise it is medium, since server logs still hold IP addresses (s18). Same in the hosted check and the CLI.
+- Site check: the missing PAIA manual finding (WEB-016) now notes that PAIA s51 applies to private bodies, so a personal project that is not a business may not need a manual. `pending legal review`
 - PyPI metadata: links to the project site, site check, changelog, docs and security policy, plus classifiers for Python 3.8 to 3.12, the MIT licence and OS independence.
 
 ## [1.2.0] - 2026-10-19
