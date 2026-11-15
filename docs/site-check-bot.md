@@ -19,9 +19,10 @@ Every request is an ordinary GET, the kind a browser makes.
 - The page that was entered, following up to 5 redirects.
 - `http://` on the same host, without following the redirect, to see whether plain HTTP sends visitors to HTTPS.
 - `/.well-known/security.txt`.
+- `/robots.txt`, then up to 3 pages on the same site that the entered page links to, to see scripts and forms there too. Only plain page paths: no query strings, no files, nothing that sounds like an action such as logout or unsubscribe. A page your robots.txt disallows for `popia-site-check` or `*` is not fetched. If robots.txt answers with a server error or can't be reached, no linked page is fetched.
 - The CLI, and the hosted check when its operator turns it on, also try a few common notice paths such as `/privacy`, `/paia` and `/cookies`.
 
-That is 2 to 11 requests per check. It does not run JavaScript, submit forms, log in, or keep the cookies your site sets. The hosted check never stores or logs the address or the result.
+That is 2 to 15 requests per check. It does not run JavaScript, submit forms, log in, or keep the cookies your site sets. The hosted check never stores or logs the address or the result.
 
 ## It respects your firewall
 
@@ -45,6 +46,13 @@ The hosted check runs on shared cloud addresses that change, so there is no fixe
 ## How to block it
 
 Add a deny rule for User-Agents that contain `popia-site-check`. The check will then report that it could not read your site.
+
+To keep the checker to the entered page only, disallow it in robots.txt:
+
+```
+User-agent: popia-site-check
+Disallow: /
+```
 
 ## Contact
 

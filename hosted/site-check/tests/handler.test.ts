@@ -346,7 +346,17 @@ Deno.test("success: response shape, headers and a clean site", async () => {
   assertEquals(res.headers.get("access-control-allow-origin"), ORIGIN);
   assertEquals(res.headers.get("cache-control"), "no-store");
   assertEquals(res.headers.get("content-type"), "application/json; charset=utf-8");
-  assertEquals(Object.keys(body), ["url", "final_url", "checked_at", "summary", "findings", "cookies", "notices", "disclaimer"]);
+  assertEquals(Object.keys(body), [
+    "url",
+    "final_url",
+    "checked_at",
+    "summary",
+    "findings",
+    "cookies",
+    "notices",
+    "pages_checked",
+    "disclaimer",
+  ]);
   assertEquals(body["url"], "https://example.co.za/");
   assertEquals(body["checked_at"], "2026-10-18T09:00:00+00:00");
   assertEquals(body["disclaimer"], DISCLAIMER);

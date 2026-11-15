@@ -6,14 +6,17 @@ import {
   checkHeaders,
   checkHtml,
   DISCLAIMER,
+  extraPagesSetting,
   isChallenge,
   parseHtml,
+  parseRobots,
   parseSetCookie,
+  pickLinks,
   runSiteCheck,
   safeUrl,
   UA,
 } from "../supabase/functions/site-check/core.ts";
-import { assert, assertEquals, fakeDns, makeCtx, mockFetch, publicDns } from "./helpers.ts";
+import { assert, assertEquals, fakeDns, html, makeCtx, mockFetch, publicDns } from "./helpers.ts";
 
 const ids = (fs: Array<{ rule_id: string }>) => fs.map((f) => f.rule_id);
 
@@ -43,7 +46,17 @@ Deno.test("parity test_site_check: findings on an insecure tracker page", async 
   assert(res.findings.some((f) => f.title === "Third-party tracker: Google Tag Manager / gtag"));
   assertEquals(res.disclaimer, DISCLAIMER);
   assert(res.disclaimer.includes("not legal advice"));
-  assertEquals(Object.keys(res), ["url", "final_url", "checked_at", "summary", "findings", "cookies", "notices", "disclaimer"]);
+  assertEquals(Object.keys(res), [
+    "url",
+    "final_url",
+    "checked_at",
+    "summary",
+    "findings",
+    "cookies",
+    "notices",
+    "pages_checked",
+    "disclaimer",
+  ]);
   assertEquals(Object.keys(res.summary), ["critical", "high", "medium", "low", "info"]);
   assertEquals(res.summary.critical, 1);
   assert(/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\+00:00$/.test(res.checked_at), res.checked_at);
@@ -299,12 +312,19 @@ Deno.test("html: missing privacy notice is high only when the page collects some
   const plain = checkHtml(`<a href="/map">Map</a><input type="hidden" name="t"><button>Go</button>`, BASE);
   const w15 = plain.findings.find((f) => f.rule_id === "WEB-015")!;
   assertEquals(w15.severity, "medium");
-  assert(w15.evidence.includes("No forms, cookies or trackers"), w15.evidence);
+  assert(w15.evidence.includes("No forms for personal details, cookies or trackers"), w15.evidence);
   assert(w15.fix.includes("IP addresses"), w15.fix);
   assertEquals(sev(`<iframe src="/embed"></iframe>`), "medium"); // same site frame
   // Each of these is a way to collect personal information: high.
-  assertEquals(sev(`<form action="/search"><button>Go</button></form>`), "high");
-  assertEquals(sev(`<input name="q">`), "high"); // entry field outside a form, type defaults to text
+  // A search box in a GET form is not collection on its own.
+  assertEquals(sev(`<form action="/search" method="get"><input name="q"><select name="from_stop"></select></form>`), "medium");
+  assertEquals(sev(`<input name="q">`), "medium");
+  // A form that posts, a text area, or a field that asks for personal details is.
+  assertEquals(sev(`<form method="POST" action="/s"><button>Go</button></form>`), "high");
+  assertEquals(sev(`<form><textarea></textarea></form>`), "high");
+  assertEquals(sev(`<form><input name="full_name"></form>`), "high");
+  assertEquals(sev(`<input id="x" autocomplete="tel">`), "high");
+  assertEquals(sev(`<input type="password" name="p">`), "high");
   assertEquals(sev(`<input type="email" name="e">`), "high");
   assertEquals(sev(`<iframe src="https://video.example.net/embed/1"></iframe>`), "high");
   assertEquals(sev(`<script src="https://www.googletagmanager.com/gtag/js?id=G-TEST"></script>`), "high");
@@ -435,4 +455,148 @@ Deno.test("safeUrl: credentials, query and fragment never appear", () => {
 Deno.test("parity test_site_check: the user agent names the checker and links its page", () => {
   assertEquals(BOT_INFO_URL, "https://github.com/VenusOne-Lee/popia-compliance/blob/main/docs/site-check-bot.md");
   assertEquals(UA, `popia-site-check/1.0 (+${BOT_INFO_URL}; passive)`);
+});
+
+// ---------------------------------------------------------------- linked pages and robots.txt
+
+Deno.test("robots: the group for this checker wins, longest rule decides, Allow wins a tie", () => {
+  const all = parseRobots("User-agent: *\nDisallow: /private\nAllow: /private/open\nDisallow: /*.php$\n");
+  assertEquals([all("/"), all("/private"), all("/private/x"), all("/private/open/1"), all("/a.php"), all("/a.php/b")], [
+    true,
+    false,
+    false,
+    true,
+    false,
+    true,
+  ]);
+  const mine = parseRobots("User-agent: *\nDisallow: /\n\nUser-agent: popia-site-check\nAllow: /\n");
+  assertEquals(mine("/map"), true);
+  const blocked = parseRobots("User-agent: popia-site-check\nUser-agent: other\nDisallow: /\n");
+  assertEquals(blocked("/map"), false);
+  const tie = parseRobots("User-agent: *\nDisallow: /a\nAllow: /a\n");
+  assertEquals(tie("/a"), true);
+  assertEquals(parseRobots("")("/x"), true);
+  assertEquals(parseRobots("User-agent: *\nDisallow:\n")("/x"), true); // empty Disallow allows all
+  // Many wildcards on a long path finish quickly: matching is linear, not a backtracking regex.
+  const stars = parseRobots("User-agent: *\nDisallow: /" + "*a".repeat(200) + "b\n");
+  const t0 = Date.now();
+  assertEquals(stars("/" + "a".repeat(5000)), true);
+  assert(Date.now() - t0 < 500, "slow robots match");
+});
+
+Deno.test("links: same site plain paths only, in page order, no files, actions or notice paths", () => {
+  const page = parseHtml(`
+    <a href="/map">Map</a><a href="/map#top">Map again</a><a href="https://other.example.net/x">Other</a>
+    <a href="/search?q=a">Search</a><a href="/files/a.pdf">PDF</a><a href="/logout">Out</a>
+    <a href="/privacy">Privacy</a><a href="/">Home</a><a href="mailto:a@example.test">Mail</a>
+    <a href="/stops">Stops</a><a href="/routes/">Routes</a><a href="/about">About</a>`);
+  assertEquals(pickLinks(page, BASE, 10), [
+    "https://example.co.za/map",
+    "https://example.co.za/stops",
+    "https://example.co.za/routes/",
+    "https://example.co.za/about",
+  ]);
+  assertEquals(pickLinks(page, BASE, 2), ["https://example.co.za/map", "https://example.co.za/stops"]);
+});
+
+Deno.test("html: linked pages add trackers, third-party scripts, mixed content and collection signals", () => {
+  const home = `<a href="/map">Map</a><a href="/privacy">Privacy</a><a href="/paia">PAIA</a>`;
+  const map = `<script src="https://cdn.example.net/leaflet/1.9.4/leaflet.js"></script>
+    <script src="https://static.example.co.za/app.js"></script><script src="http://cdn.example.org/old.js"></script>
+    <script src="https://connect.facebook.net/en_US/fbevents.js"></script><form><input name="q"></form>`;
+  const one = checkHtml(home, BASE);
+  assert(!ids(one.findings).includes("WEB-023"));
+  const r = checkHtml(home, BASE, {}, 0, [{ url: "https://example.co.za/map", html: map }]);
+  const w23 = r.findings.find((f) => f.rule_id === "WEB-023")!;
+  assertEquals([w23.title, w23.severity, w23.popia], ["Scripts loaded from other sites", "info", "s20; s21; s72"]);
+  assertEquals(w23.evidence, "cdn.example.net (/map), cdn.example.org (/map)"); // own subdomain and tracker left out
+  const w14 = r.findings.find((f) => f.rule_id === "WEB-014")!;
+  assertEquals(w14.evidence, "Meta Pixel on /map");
+  assert(ids(r.findings).includes("WEB-013"), "tracker on a linked page with no consent tool");
+  const w12 = r.findings.find((f) => f.rule_id === "WEB-012")!;
+  assertEquals(w12.evidence, "http://cdn.example.org/old.js on /map");
+  // Notices still come from the checked page only.
+  assertEquals([r.notices.privacy, r.notices.paia], [true, true]);
+  // A consent tool on any checked page counts.
+  const consent = checkHtml(home, BASE, {}, 0, [{
+    url: "https://example.co.za/map",
+    html: map + `<div data-popia-consent></div>`,
+  }]);
+  assert(!ids(consent.findings).includes("WEB-013"));
+});
+
+Deno.test("html: a form on a linked page keeps a missing privacy notice high", () => {
+  const sev = (extra: string) =>
+    checkHtml(`<a href="/map">Map</a>`, BASE, {}, 0, [{ url: "https://example.co.za/map", html: extra }])
+      .findings.find((f) => f.rule_id === "WEB-015")!.severity;
+  assertEquals(sev(`<p>map</p>`), "medium");
+  assertEquals(sev(`<form><input type="email" name="e"></form>`), "high");
+});
+
+Deno.test("html: WEB-023 names at most 10 hosts", () => {
+  const scripts = Array.from({ length: 12 }, (_, i) => `<script src="https://cdn${i}.example.net/x.js"></script>`).join("");
+  const w23 = checkHtml(scripts, BASE).findings.find((f) => f.rule_id === "WEB-023")!;
+  assert(w23.evidence.endsWith(", and 2 more"), w23.evidence);
+  assert(!w23.evidence.includes("(/"), "hosts on the checked page carry no page label");
+});
+
+const HOME = `<a href="/map">Map</a><a href="/stops">Stops</a><a href="/away">Away</a><a href="/slow">Slow</a>`;
+const MAP = `<script src="https://cdn.example.net/leaflet.js"></script>`;
+
+function crawlRoutes(robots: () => Response) {
+  return {
+    "https://example.co.za/": html(HOME),
+    "https://example.co.za/robots.txt": robots,
+    "https://example.co.za/map": html(MAP),
+    "https://example.co.za/stops": html(`<p>stops</p>`),
+    "https://example.co.za/away": () => new Response(null, { status: 302, headers: { location: "https://other.example.net/" } }),
+    "https://other.example.net/": html(MAP.replace("cdn.example.net", "cdn.other.example.net")),
+  };
+}
+const crawlDns = () => fakeDns(publicDns("example.co.za", "other.example.net")).resolve;
+
+Deno.test("check: linked pages are fetched only where robots.txt allows and only on the same site", async () => {
+  const text = (body: string, status = 200) => () => new Response(body, { status, headers: { "content-type": "text/plain" } });
+  // No robots.txt: up to 3 linked pages. The off-site redirect is dropped.
+  const m = mockFetch(crawlRoutes(text("", 404)));
+  const res = await runSiteCheck("https://example.co.za/", makeCtx(m.fn, crawlDns()), { extraPages: 3 });
+  assertEquals(res.pages_checked, ["/", "/map", "/stops"]);
+  assert(m.calls.some((c) => c.url === "https://example.co.za/away"), "away was tried");
+  assert(!m.calls.some((c) => c.url === "https://example.co.za/slow"), "only 3 pages");
+  assertEquals(res.findings.find((f) => f.rule_id === "WEB-023")!.evidence, "cdn.example.net (/map)");
+  // robots.txt disallows /map for everyone.
+  const m2 = mockFetch(crawlRoutes(text("User-agent: *\nDisallow: /map\n")));
+  const res2 = await runSiteCheck("https://example.co.za/", makeCtx(m2.fn, crawlDns()), { extraPages: 3 });
+  assert(!m2.calls.some((c) => c.url === "https://example.co.za/map"), "disallowed page fetched");
+  assert(!ids(res2.findings).includes("WEB-023"));
+  assertEquals(res2.pages_checked, ["/", "/stops"]);
+  // robots.txt server error: no linked page is fetched.
+  const m3 = mockFetch(crawlRoutes(text("", 503)));
+  const res3 = await runSiteCheck("https://example.co.za/", makeCtx(m3.fn, crawlDns()), { extraPages: 3 });
+  assertEquals(res3.pages_checked, ["/"]);
+  assert(!m3.calls.some((c) => c.url === "https://example.co.za/map"));
+  // Off by default in the core: not even robots.txt is requested.
+  const m4 = mockFetch(crawlRoutes(text("")));
+  const res4 = await runSiteCheck("https://example.co.za/", makeCtx(m4.fn, crawlDns()));
+  assertEquals(res4.pages_checked, ["/"]);
+  assert(!m4.calls.some((c) => c.url.endsWith("/robots.txt")));
+});
+
+Deno.test("check: a linked page behind a bot check or with an error is skipped, not graded", async () => {
+  const routes = {
+    "https://example.co.za/": html(`<a href="/map">Map</a><a href="/stops">Stops</a>`),
+    "https://example.co.za/map": html(`<title>Just a moment...</title>` + MAP),
+    "https://example.co.za/stops": html(MAP, {}, 500),
+  };
+  const m = mockFetch(routes);
+  const res = await runSiteCheck("https://example.co.za/", makeCtx(m.fn, crawlDns()), { extraPages: 3 });
+  assertEquals(res.pages_checked, ["/"]);
+  assert(!ids(res.findings).includes("WEB-023"));
+});
+
+Deno.test("settings: EXTRA_PAGES defaults to 3, accepts 0 to 3, and fails closed to 0", () => {
+  assertEquals(
+    [undefined, "", "0", "2", "3", "9", "-1", "two", "1.5"].map((v) => extraPagesSetting(v)),
+    [3, 3, 0, 2, 3, 3, 0, 0, 0],
+  );
 });

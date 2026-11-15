@@ -49,6 +49,7 @@ A URL without a scheme gets `https://`. A successful response is HTTP 200:
   ],
   "cookies": [ { "name": "_ga", "secure": false, "httponly": false, "samesite": null, "tracking": true } ],
   "notices": { "privacy": false, "paia": true, "cookie": false, "information_officer": false },
+  "pages_checked": ["/", "/map", "/about"],
   "disclaimer": "Passive automated check of initial HTML and headers. Leads for review, not legal conclusions. Engineering guidance only, not legal advice."
 }
 ```
@@ -79,6 +80,7 @@ Finding IDs WEB-001 to WEB-021, titles, severities and POPIA sections are the sa
 | `SUPABASE_URL` | yes | injected | Provided to hosted Edge Functions by Supabase. |
 | `SUPABASE_SERVICE_ROLE_KEY` | yes | injected | Provided by Supabase. Used only to call `site_check_hit`. |
 | `PROBE_NOTICE_PATHS` | no | `false` | Set to `true` to also request `/privacy`, `/paia`, `/cookies` and five similar paths, like the Python tool does. Adds up to 8 GETs per check. |
+| `EXTRA_PAGES` | no | `3` | Same-site pages linked from the entered page to check too, 0 to 3. Only paths robots.txt allows; no query strings or files. Adds 1 GET for robots.txt plus 1 per page. Set `0` to check one page only. A value that is not a whole number turns it off. |
 | `CLIENT_IP_HEADER` | no | unset | Header that carries the client IP. Unset means the first present of `cf-connecting-ip`, `x-real-ip`, then the last `x-forwarded-for` entry. When set, only that header is read. In any comma separated value the last entry is used, never the first. Ports are stripped. See residual risks. |
 | `SITE_CHECK_DISABLE_SERVE` | tests only | unset | Set to `1` so importing the module does not start a server. |
 
@@ -212,7 +214,7 @@ These are real and worth knowing before you put the endpoint on the open interne
 10. **Platform logs.** The function writes no logs. The Supabase gateway still records request metadata such as time, path, status and possibly IP. The submitted URL is in the POST body, so it does not appear in path logs.
 11. **Content from the target.** Evidence strings, header values, cookie names and input names come from the scanned site. They are capped in length but not escaped. Render them as text.
 12. **Parser differences.** The HTML tokenizer is a small linear scanner that mirrors Python's `html.parser` on the cases the checks use. It is not a full HTML5 parser. Odd markup can be read differently from a browser.
-13. **Passive limits.** Only the initial HTML and headers are seen. Single-page apps render links, banners and some trackers in JavaScript, so notice and banner findings need a manual check in a browser with a clean profile. Sites with broken TLS return `fetch_failed` instead of a finding.
+13. **Passive limits.** Only the initial HTML and headers are seen, of the entered page and up to 3 same-site pages it links to. Single-page apps render links, banners and some trackers in JavaScript, so notice and banner findings need a manual check in a browser with a clean profile. Sites with broken TLS return `fetch_failed` instead of a finding.
 
 ## Differences from site_check.py
 
