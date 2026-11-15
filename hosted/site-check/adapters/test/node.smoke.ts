@@ -75,6 +75,7 @@ test("createHandler runs under Node with Node's Request, Response and Headers", 
     "findings",
     "cookies",
     "notices",
+    "pages_checked",
     "disclaimer",
   ]);
   assert.equal(body.notices.privacy, true);
