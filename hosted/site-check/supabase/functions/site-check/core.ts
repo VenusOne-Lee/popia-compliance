@@ -999,7 +999,7 @@ export interface HtmlResult {
  * HTML checks on the initial document: WEB-012 to WEB-017, WEB-019 to WEB-021.
  * `probed` lets the caller mark notices found via common paths. WEB-018 is added by the caller.
  */
-export function checkHtml(html: string, finalUrl: string, probed: Partial<Notices> = {}): HtmlResult {
+export function checkHtml(html: string, finalUrl: string, probed: Partial<Notices> = {}, cookiesSet = 0): HtmlResult {
   const findings: Finding[] = [];
   const page = parseHtml(html);
   const base = new URL(finalUrl);
@@ -1085,14 +1085,20 @@ export function checkHtml(html: string, finalUrl: string, probed: Partial<Notice
     );
   }
   if (notices.privacy === false) {
+    // Severity follows what the page visibly collects. It stays at medium, never lower: server logs
+    // still hold IP addresses, and a passive check cannot see what the backend collects.
+    const collects = collectsOnPage(page, base, trackers.length, cookiesSet);
     findings.push(
       f(
         "WEB-015",
         "No privacy notice link found",
-        "high",
+        collects ? "high" : "medium",
         "s18",
-        "No link or common path",
-        "Publish a privacy notice and link it in the footer and next to every form.",
+        collects ? "No link or common path" : "No link or common path. No forms, cookies or trackers seen on this page",
+        collects
+          ? "Publish a privacy notice and link it in the footer and next to every form."
+          : "Publish a short privacy notice and link it in the footer. Server logs still record IP addresses, " +
+            "which are personal information.",
       ),
     );
   }
@@ -1104,7 +1110,9 @@ export function checkHtml(html: string, finalUrl: string, probed: Partial<Notice
         "medium",
         "PAIA s51",
         "No PAIA link or common path",
-        "Publish the PAIA manual and link it in the footer.",
+        "Publish the PAIA manual and link it in the footer. " +
+          "PAIA s51 applies to private bodies, such as a company or a person running a business. " +
+          "A personal project that is not a business may not need one.",
       ),
     );
   }
@@ -1159,6 +1167,22 @@ export function checkHtml(html: string, finalUrl: string, probed: Partial<Notice
     }
   }
   return { findings, trackers, notices, spa, consentTool, consentMode };
+}
+
+const NON_ENTRY_INPUTS = new Set(["hidden", "submit", "button", "reset", "image"]);
+
+/** True when the page shows a way to collect personal information: a form, an entry field,
+ * a tracker, a cookie, or an iframe from another host. */
+function collectsOnPage(page: Page, base: URL, trackers: number, cookiesSet: number): boolean {
+  if (page.forms > 0 || trackers > 0 || cookiesSet > 0) return true;
+  if (page.inputs.some((i) => !NON_ENTRY_INPUTS.has((i["type"] ?? "text").toLowerCase()))) return true;
+  return page.iframes.some((src) => {
+    try {
+      return new URL(src, base).hostname.toLowerCase() !== base.hostname.toLowerCase();
+    } catch {
+      return false;
+    }
+  });
 }
 
 function capPerRule(findings: Finding[]): Finding[] {
@@ -1257,7 +1281,7 @@ export async function runSiteCheck(input: string, ctx: Ctx, opts: CheckOptions =
     probed.paia = [4, 5].some(found);
     probed.cookie = [6, 7].some(found);
   }
-  const hr = checkHtml(html, finalUrl, probed);
+  const hr = checkHtml(html, finalUrl, probed, ck.cookies.length);
   findings.push(...hr.findings);
 
   const hasSecTxt = secR.status === "fulfilled" && secR.value.status === 200 &&

@@ -52,11 +52,73 @@ class SiteCheckTest(unittest.TestCase):
         for rid in ("WEB-001", "WEB-004", "WEB-009", "WEB-010", "WEB-011", "WEB-013", "WEB-015", "WEB-016", "WEB-019"):
             self.assertIn(rid, got, rid)
         self.assertIn("Meta Pixel", self.res["trackers"])
+        w15 = next(f for f in self.res["findings"] if f["rule_id"] == "WEB-015")
+        self.assertEqual(w15["severity"], "high")  # the page has a form, trackers and cookies
 
     def test_markdown(self):
         md = site_check.fmt_md(self.res)
         self.assertIn("# POPIA site check", md)
         self.assertIn("not legal advice", md)
+
+
+class Plain(BaseHTTPRequestHandler):
+    """Pages with no privacy notice link, with and without a way to collect personal information."""
+
+    def do_GET(self):
+        routes = {
+            "/": (b'<a href="/map">Map</a><input type="hidden" name="t"><button>Go</button>', []),
+            "/form": (b'<form action="/search"><button>Go</button></form>', []),
+            "/field": (b'<input name="q">', []),
+            "/frame-own": (b'<iframe src="/embed"></iframe>', []),
+            "/frame": (b'<iframe src="https://video.example.net/embed/1"></iframe>', []),
+            "/cookie": (b"<p>hi</p>", ["pref=1; Path=/; Secure; HttpOnly"]),
+        }
+        route = routes.get(self.path)
+        if route is None:
+            self.send_response(404)
+            self.end_headers()
+            return
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html")
+        for c in route[1]:
+            self.send_header("Set-Cookie", c)
+        self.end_headers()
+        self.wfile.write(route[0])
+
+    def log_message(self, *a):
+        pass
+
+
+class SeverityContextTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.srv = HTTPServer(("127.0.0.1", 0), Plain)
+        threading.Thread(target=cls.srv.serve_forever, daemon=True).start()
+        cls.base = f"http://127.0.0.1:{cls.srv.server_port}"
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.srv.shutdown()
+
+    def finding(self, path, rid):
+        res = site_check.check(self.base + path, timeout=5, probe_paths=False)
+        return next(f for f in res["findings"] if f["rule_id"] == rid)
+
+    def test_privacy_notice_is_medium_when_nothing_collects(self):
+        f = self.finding("/", "WEB-015")
+        self.assertEqual(f["severity"], "medium")
+        self.assertIn("No forms, cookies or trackers", f["evidence"])
+        self.assertIn("IP addresses", f["fix"])
+        self.assertEqual(self.finding("/frame-own", "WEB-015")["severity"], "medium")
+
+    def test_privacy_notice_is_high_when_the_page_collects(self):
+        for path in ("/form", "/field", "/frame", "/cookie"):
+            self.assertEqual(self.finding(path, "WEB-015")["severity"], "high", path)
+
+    def test_paia_finding_notes_non_business_projects(self):
+        f = self.finding("/", "WEB-016")
+        self.assertEqual(f["severity"], "medium")
+        self.assertIn("not a business may not need one", f["fix"])
 
 
 if __name__ == "__main__":

@@ -287,9 +287,43 @@ Deno.test("html: privacy, PAIA, cookie and Information Officer notices", () => {
   const none = checkHtml(`<a href="/terms">Terms</a><p>privacy matters</p>`, BASE);
   assertEquals([none.notices.privacy, none.notices.paia], [false, false]);
   const w15 = none.findings.find((f) => f.rule_id === "WEB-015")!;
-  assertEquals([w15.title, w15.severity, w15.popia], ["No privacy notice link found", "high", "s18"]);
+  assertEquals([w15.title, w15.severity, w15.popia], ["No privacy notice link found", "medium", "s18"]);
   const w16 = none.findings.find((f) => f.rule_id === "WEB-016")!;
   assertEquals([w16.title, w16.severity, w16.popia], ["No PAIA manual link found", "medium", "PAIA s51"]);
+  assert(w16.fix.includes("not a business may not need one"), w16.fix);
+});
+Deno.test("html: missing privacy notice is high only when the page collects something", () => {
+  const sev = (html: string, cookies = 0) =>
+    checkHtml(html, BASE, {}, cookies).findings.find((f) => f.rule_id === "WEB-015")!.severity;
+  // Nothing visible collects personal information: medium, never lower.
+  const plain = checkHtml(`<a href="/map">Map</a><input type="hidden" name="t"><button>Go</button>`, BASE);
+  const w15 = plain.findings.find((f) => f.rule_id === "WEB-015")!;
+  assertEquals(w15.severity, "medium");
+  assert(w15.evidence.includes("No forms, cookies or trackers"), w15.evidence);
+  assert(w15.fix.includes("IP addresses"), w15.fix);
+  assertEquals(sev(`<iframe src="/embed"></iframe>`), "medium"); // same site frame
+  // Each of these is a way to collect personal information: high.
+  assertEquals(sev(`<form action="/search"><button>Go</button></form>`), "high");
+  assertEquals(sev(`<input name="q">`), "high"); // entry field outside a form, type defaults to text
+  assertEquals(sev(`<input type="email" name="e">`), "high");
+  assertEquals(sev(`<iframe src="https://video.example.net/embed/1"></iframe>`), "high");
+  assertEquals(sev(`<script src="https://www.googletagmanager.com/gtag/js?id=G-TEST"></script>`), "high");
+  assertEquals(sev(`<p>hi</p>`, 1), "high");
+});
+Deno.test("check: cookies set on first load keep a missing privacy notice high", async () => {
+  const h = new Headers({ "content-type": "text/html" });
+  h.append("set-cookie", "pref=1; Path=/; Secure; HttpOnly");
+  const m = mockFetch({ "http://plain.example.co.za/": () => new Response(`<p>hello</p>`, { headers: h }) });
+  const res = await runSiteCheck("http://plain.example.co.za/", makeCtx(m.fn, fakeDns(publicDns("plain.example.co.za")).resolve));
+  assertEquals(res.findings.find((f) => f.rule_id === "WEB-015")!.severity, "high");
+  const m2 = mockFetch({
+    "http://plain.example.co.za/": () => new Response(`<p>hello</p>`, { headers: { "content-type": "text/html" } }),
+  });
+  const res2 = await runSiteCheck(
+    "http://plain.example.co.za/",
+    makeCtx(m2.fn, fakeDns(publicDns("plain.example.co.za")).resolve),
+  );
+  assertEquals(res2.findings.find((f) => f.rule_id === "WEB-015")!.severity, "medium");
 });
 Deno.test("html: probed notice paths count as found", () => {
   const r = checkHtml(`<p>hi</p>`, BASE, { privacy: true, paia: true });

@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "note": "Proposed actions for site check findings. Engineering guidance, not legal advice. Section titles are the headings in the Acts.",
   "bands": [
     { "id": "now", "title": "Fix first", "severities": ["critical", "high"], "intro": "These put personal information at risk or are clear gaps visitors will notice." },
@@ -21,6 +21,7 @@
     "consent": { "label": "POPIA Kit consent banner and ConsentGate", "url": "https://github.com/VenusOne-Lee/popia-compliance/blob/main/registry/README.md" },
     "pack": { "label": "Draft it with the compliance pack: uvx popia-kit pack --interactive", "url": "https://github.com/VenusOne-Lee/popia-compliance/blob/main/docs/quickstart.md" },
     "security": { "label": "POPIA Kit security controls guide", "url": "https://github.com/VenusOne-Lee/popia-compliance/blob/main/references/03-security-controls.md" },
+    "headers": { "label": "Copy-paste header fixes for nginx, Apache, Netlify, Vercel, Cloudflare, Next.js, Express, FastAPI and Django", "url": "https://github.com/VenusOne-Lee/popia-compliance/blob/main/docs/security-headers.md" },
     "operators": { "label": "POPIA Kit guide to operators and cross-border transfers", "url": "https://github.com/VenusOne-Lee/popia-compliance/blob/main/references/06-cross-border-and-operators.md" },
     "marketing": { "label": "POPIA Kit marketing opt-in component", "url": "https://github.com/VenusOne-Lee/popia-compliance/blob/main/registry/README.md" },
     "scanner": { "label": "Scan your code: uvx popia-kit scan .", "url": "https://github.com/VenusOne-Lee/popia-compliance/blob/main/docs/quickstart.md" }
@@ -39,32 +40,32 @@
     "WEB-003": {
       "why": "HSTS tells browsers to always use HTTPS, which stops downgrade attacks.",
       "actions": ["Send Strict-Transport-Security with a max-age of at least 6 months.", "Add includeSubDomains once every subdomain supports HTTPS."],
-      "kit": "security"
+      "kit": "headers"
     },
     "WEB-004": {
       "why": "A Content Security Policy limits which scripts can run, which reduces the damage from injected code.",
       "actions": ["Add a Content-Security-Policy that allows scripts only from your own domain and the vendors you use.", "Avoid 'unsafe-inline' for scripts. Use nonces or hashes instead."],
-      "kit": "security"
+      "kit": "headers"
     },
     "WEB-005": {
       "why": "Without nosniff, a browser may treat an uploaded file as a script.",
       "actions": ["Send X-Content-Type-Options: nosniff on every response."],
-      "kit": "security"
+      "kit": "headers"
     },
     "WEB-006": {
       "why": "Another site could load your pages in a hidden frame and trick visitors into clicking.",
       "actions": ["Add frame-ancestors 'none' (or 'self') to your Content-Security-Policy, or send X-Frame-Options: DENY."],
-      "kit": "security"
+      "kit": "headers"
     },
     "WEB-007": {
       "why": "Full page addresses, which can contain personal details, may be sent to other sites.",
       "actions": ["Send Referrer-Policy: strict-origin-when-cross-origin or stricter."],
-      "kit": "security"
+      "kit": "headers"
     },
     "WEB-008": {
       "why": "A Permissions-Policy switches off browser features the site does not need.",
       "actions": ["Send Permissions-Policy: camera=(), microphone=(), geolocation=() unless you use them."],
-      "kit": "security"
+      "kit": "headers"
     },
     "WEB-009": {
       "why": "Version numbers tell attackers which known weaknesses to try.",
@@ -98,12 +99,12 @@
     },
     "WEB-015": {
       "why": "Visitors need to know who collects their information, why, and what their rights are.",
-      "actions": ["Publish a privacy notice.", "Link it in the footer and next to every form."],
+      "actions": ["Publish a privacy notice.", "Link it in the footer and next to every form.", "If the check saw no forms, cookies or trackers, a short notice can do: who runs the site, what the server logs record, and how to get in touch."],
       "kit": "pack"
     },
     "WEB-016": {
       "why": "Private bodies must publish a PAIA manual that explains how to request records.",
-      "actions": ["Publish a PAIA manual.", "Link it in the footer."],
+      "actions": ["Publish a PAIA manual.", "Link it in the footer.", "PAIA s51 applies to private bodies, such as a company or a person running a business. A personal project that is not a business may not need a manual (pending legal review)."],
       "kit": "pack"
     },
     "WEB-017": {
