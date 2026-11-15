@@ -17,6 +17,8 @@ Legal content merged without a legal reviewer is marked `pending legal review` (
 - A page for site owners on the site checker: what it requests, that it stops at bot protection, and how to allow it for one check or block it (`docs/site-check-bot.md`).
 - Scanner rule SEC-021: a session or auth cookie set in server code without HttpOnly or Secure (s19). It reads Express `res.cookie`, Next.js `cookies().set`, Hono and Fastify `setCookie`, SvelteKit `cookies.set`, Flask and Django `set_cookie`, raw `Set-Cookie` headers, `express-session` options, and `SESSION_COOKIE_SECURE` or `SESSION_COOKIE_HTTPONLY` set to False. Options passed as a variable are only checked for an explicit false. Low confidence.
 - A false positive issue template, so reports name the rule, a small example and the expected result.
+- Site check: also checks up to 3 same-site pages the entered page links to, where robots.txt allows. Only plain paths, no query strings, files or action links such as logout. A robots.txt server error means no linked page is fetched. Trackers, mixed content and forms on those pages now count, and findings name the page. The result lists `pages_checked`. Hosted setting `EXTRA_PAGES` (default 3, 0 turns it off) and CLI `--pages`. The page for site owners lists the new requests and how to opt out in robots.txt.
+- Site check rule WEB-023 (info): scripts loaded from other sites, such as a map library from a CDN. Each host receives visitors' IP addresses, so it is a lead for the operator register (s20, s21) and cross-border transfers (s72). Known trackers stay under WEB-014.
 - Copy-paste security header fixes for nginx, Apache, Netlify, Cloudflare, Vercel, Next.js, Express, FastAPI and Django (`docs/security-headers.md`). The site check report links to it from the header findings (WEB-003 to WEB-008).
 
 ### Changed
@@ -24,7 +26,7 @@ Legal content merged without a legal reviewer is marked `pending legal review` (
 - When the site check cannot read a site, the CLI and MCP tool now point to the code scanner and the AI skill, which bot protection does not affect.
 - The site check User-Agent now links to the page for site owners, and the blocked message says the site owner can allow the checker for one check. The `popia-site-check/` token is unchanged.
 - README and quickstart link to popiakit.co.za and the browser site check, and the README has PyPI, CI, licence and site check badges.
-- Site check: a missing privacy notice link (WEB-015) is high only when the page shows a way to collect personal information: a form, an entry field, a tracker, a cookie or an iframe from another site. Otherwise it is medium, since server logs still hold IP addresses (s18). Same in the hosted check and the CLI.
+- Site check: a missing privacy notice link (WEB-015) is high only when a checked page shows a way to collect personal information: a form that posts, a text area, a field that asks for personal details such as an email address or phone number, a tracker, a cookie or an iframe from another site. A search box alone does not count. Otherwise it is medium, since server logs still hold IP addresses (s18). Same in the hosted check and the CLI.
 - Site check: the missing PAIA manual finding (WEB-016) now notes that PAIA s51 applies to private bodies, so a personal project that is not a business may not need a manual. `pending legal review`
 - PyPI metadata: links to the project site, site check, changelog, docs and security policy, plus classifiers for Python 3.8 to 3.12, the MIT licence and OS independence.
 

@@ -1,5 +1,5 @@
 {
-  "version": "1.1.0",
+  "version": "1.2.0",
   "note": "Proposed actions for site check findings. Engineering guidance, not legal advice. Section titles are the headings in the Acts.",
   "bands": [
     { "id": "now", "title": "Fix first", "severities": ["critical", "high"], "intro": "These put personal information at risk or are clear gaps visitors will notice." },
@@ -99,7 +99,7 @@
     },
     "WEB-015": {
       "why": "Visitors need to know who collects their information, why, and what their rights are.",
-      "actions": ["Publish a privacy notice.", "Link it in the footer and next to every form.", "If the check saw no forms, cookies or trackers, a short notice can do: who runs the site, what the server logs record, and how to get in touch."],
+      "actions": ["Publish a privacy notice.", "Link it in the footer and next to every form.", "If the check saw no forms for personal details, no cookies and no trackers, a short notice can do: who runs the site, what the server logs record, and how to get in touch."],
       "kit": "pack"
     },
     "WEB-016": {
@@ -132,6 +132,11 @@
       "actions": ["Open the site in a browser and confirm the footer links the privacy notice and PAIA manual.", "Consider server rendering or prerendering so the links are in the first HTML."],
       "kit": "pack"
     },
+    "WEB-023": {
+      "why": "Every script loaded from another site sends that site your visitors' IP addresses, which may be in another country.",
+      "actions": ["List each provider that receives personal information as an operator, with its country and the s72 basis for the transfer.", "Host libraries such as map or chart scripts yourself where you can, so visitors only talk to your site.", "Mention these providers in your privacy notice."],
+      "kit": "operators"
+    },
     "WEB-021": {
       "why": "Personal information in an address ends up in browser history, server logs and other sites' referrer data.",
       "actions": ["Send personal information in the request body, not the address.", "Use opaque IDs in links."],
@@ -141,7 +146,7 @@
   "covers": [
     "Security headers and HTTPS",
     "Cookies set before any choice",
-    "Trackers in the page's first load",
+    "Trackers and other third-party scripts in the page's first load, and in up to 3 pages it links to on the same site",
     "Links to a privacy notice, cookie notice and PAIA manual",
     "Pre-ticked boxes in forms"
   ],
@@ -150,5 +155,5 @@
     "Pages behind a login, and what happens after a visitor clicks.",
     "How you handle personal information inside your business, your contracts and your records."
   ],
-  "disclaimer": "This report comes from a passive automated check of one page, its headers and its cookies. Findings are leads to review, not legal conclusions. It is not a compliance certificate and not legal advice. Prepared with POPIA Kit, free and open source from Venus ARC (Pty) Ltd, trading as Venus One."
+  "disclaimer": "This report comes from a passive automated check of one page, its headers and its cookies, plus up to 3 pages it links to on the same site where robots.txt allows. Findings are leads to review, not legal conclusions. It is not a compliance certificate and not legal advice. Prepared with POPIA Kit, free and open source from Venus ARC (Pty) Ltd, trading as Venus One."
 }

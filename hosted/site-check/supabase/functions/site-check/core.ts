@@ -4,7 +4,7 @@
 // Passive only: ordinary GET requests. No form submissions, no probing, no authentication.
 //
 // POST {"url": "...", "turnstileToken": "..."}  ->  {url, final_url, checked_at, summary,
-//      findings[], cookies[], notices, disclaimer}
+//      findings[], cookies[], notices, pages_checked[], disclaimer}
 //
 // Runtime agnostic. No imports, no Deno or Node globals. Only Web APIs: fetch types,
 // Request/Response/Headers, AbortSignal, crypto.subtle, TextEncoder/TextDecoder, ReadableStream.
@@ -43,6 +43,12 @@ export const LIMITS = {
   requestBodyMs: 5_000, // time allowed to receive the small JSON request body
   maxReportPath: 512, // path characters kept in report URLs; bounds the redaction regexes
   maxHeaderScan: 256, // header characters scanned by WEB-009
+  maxExtraPages: 3, // same-site pages linked from the checked page, fetched when robots.txt allows
+  maxExtraPageBytes: 524_288, // 512 KB per extra page
+  maxRobotsBytes: 32_768,
+  maxRobotsRules: 500,
+  maxLinkCandidates: 40, // links considered before robots.txt filtering
+  maxThirdPartyHosts: 10, // hosts named in WEB-023 evidence
 };
 
 const DOH_URL = "https://cloudflare-dns.com/dns-query";
@@ -589,6 +595,113 @@ function redact(prefix: string, path: string, hasQuery: boolean): string {
   return `${prefix}${p}${hasQuery ? " [query removed]" : ""}`;
 }
 
+// ---------------------------------------------------------------- robots.txt and linked pages
+
+/** Glob match where `*` is any run of characters. Linear two-pointer match, no regex, so no backtracking. */
+function globMatch(pattern: string, text: string): boolean {
+  let p = 0, t = 0, star = -1, mark = 0;
+  while (t < text.length) {
+    if (p < pattern.length && pattern[p] !== "*" && pattern[p] === text[t]) {
+      p++;
+      t++;
+    } else if (p < pattern.length && pattern[p] === "*") {
+      star = p++;
+      mark = t;
+    } else if (star >= 0) {
+      p = star + 1;
+      t = ++mark;
+    } else {
+      return false;
+    }
+  }
+  while (p < pattern.length && pattern[p] === "*") p++;
+  return p === pattern.length;
+}
+
+/** robots.txt rule match: a prefix match, or a full match when the rule ends with `$`. */
+function robotsRuleMatches(rule: string, path: string): boolean {
+  return rule.endsWith("$") ? globMatch(rule.slice(0, -1), path) : globMatch(rule + "*", path);
+}
+
+/**
+ * Parse robots.txt and return a test for a path. The group for this checker's token
+ * (`popia-site-check`) wins over `*`. The longest matching rule decides; Allow wins a tie.
+ */
+export function parseRobots(txt: string): (path: string) => boolean {
+  type Group = { agents: string[]; rules: Array<{ allow: boolean; path: string }> };
+  const groups: Group[] = [];
+  let cur: Group | null = null;
+  let lastWasAgent = false;
+  let rules = 0;
+  for (const raw of txt.split(/\r?\n/)) {
+    const line = raw.replace(/#.*/, "").trim();
+    const i = line.indexOf(":");
+    if (i < 0) continue;
+    const key = line.slice(0, i).trim().toLowerCase();
+    const value = line.slice(i + 1).trim();
+    if (key === "user-agent") {
+      if (!cur || !lastWasAgent) groups.push(cur = { agents: [], rules: [] });
+      cur.agents.push(value.toLowerCase());
+      lastWasAgent = true;
+    } else if ((key === "allow" || key === "disallow") && cur) {
+      lastWasAgent = false;
+      if (rules++ >= LIMITS.maxRobotsRules) continue;
+      if (value) cur.rules.push({ allow: key === "allow", path: value.slice(0, LIMITS.maxReportPath) });
+    } else {
+      lastWasAgent = false;
+    }
+  }
+  const mine = groups.filter((g) => g.agents.some((a) => a !== "*" && "popia-site-check".includes(a)));
+  const chosen = (mine.length ? mine : groups.filter((g) => g.agents.includes("*"))).flatMap((g) => g.rules);
+  return (path: string) => {
+    const pth = path.slice(0, LIMITS.maxReportPath);
+    let best: { allow: boolean; len: number } | null = null;
+    for (const r of chosen) {
+      if (!robotsRuleMatches(r.path, pth)) continue;
+      if (!best || r.path.length > best.len || (r.path.length === best.len && r.allow)) {
+        best = { allow: r.allow, len: r.path.length };
+      }
+    }
+    return best ? best.allow : true;
+  };
+}
+
+// Links never followed: files, and paths that sound like they change something.
+const SKIP_EXTENSION = /\.(pdf|png|jpe?g|gif|svg|webp|ico|css|js|mjs|json|xml|txt|zip|gz|mp[34]|webm|docx?|xlsx?|pptx?|csv)$/i;
+const SKIP_ACTION = /(log-?out|sign-?out|unsubscribe|delete|remove|cancel|confirm|verify|reset)/i;
+
+/**
+ * Same-site pages linked from the checked page, in page order. Only plain paths: no query strings,
+ * no files, no notice paths (they are probed separately) and nothing that sounds like an action.
+ */
+export function pickLinks(page: Page, finalUrl: string, max: number): string[] {
+  const base = new URL(finalUrl);
+  const seen = new Set<string>([base.pathname]);
+  const out: string[] = [];
+  for (const l of page.links) {
+    if (out.length >= max) break;
+    let u: URL;
+    try {
+      u = new URL(l.href, base);
+    } catch {
+      continue;
+    }
+    if (u.origin !== base.origin || u.search || u.username || u.password) continue;
+    const path = u.pathname;
+    if (seen.has(path)) continue;
+    seen.add(path);
+    if (SKIP_EXTENSION.test(path) || SKIP_ACTION.test(path) || NOTICE_PATHS.includes(path.replace(/\/$/, ""))) continue;
+    out.push(u.origin + path);
+  }
+  return out;
+}
+
+/** A linked page fetched for the HTML checks. `url` is its final URL. */
+export interface ExtraPage {
+  url: string;
+  html: string;
+}
+
 // ---------------------------------------------------------------- HTML parsing (no dependencies)
 
 export interface Page {
@@ -596,6 +709,8 @@ export interface Page {
   links: Array<{ href: string; text: string }>;
   inputs: Array<Record<string, string>>;
   forms: number;
+  postForms: number;
+  textareas: number;
   text: string[];
   iframes: string[];
   inlineJs: string[];
@@ -668,7 +783,17 @@ function tagEnd(html: string, from: number): number {
 
 /** Linear-time tolerant tokenizer that mirrors the parts of Python's HTMLParser the checks use. */
 export function parseHtml(html: string): Page {
-  const page: Page = { scripts: [], links: [], inputs: [], forms: 0, text: [], iframes: [], inlineJs: [] };
+  const page: Page = {
+    scripts: [],
+    links: [],
+    inputs: [],
+    forms: 0,
+    postForms: 0,
+    textareas: 0,
+    text: [],
+    iframes: [],
+    inlineJs: [],
+  };
   let inA: { href: string; text: string } | null = null;
   const data = (s: string) => {
     if (!s) return;
@@ -739,7 +864,10 @@ export function parseHtml(html: string): Page {
     }
     if (tag === "a") inA = { href: attrs["href"] ?? "", text: "" };
     else if (tag === "input") page.inputs.push(attrs);
-    else if (tag === "form") page.forms++;
+    else if (tag === "form") {
+      page.forms++;
+      if ((attrs["method"] ?? "").trim().toLowerCase() === "post") page.postForms++;
+    } else if (tag === "textarea") page.textareas++;
     else if (tag === "iframe") page.iframes.push(attrs["src"] ?? "");
   }
   return page;
@@ -999,37 +1127,75 @@ export interface HtmlResult {
  * HTML checks on the initial document: WEB-012 to WEB-017, WEB-019 to WEB-021.
  * `probed` lets the caller mark notices found via common paths. WEB-018 is added by the caller.
  */
-export function checkHtml(html: string, finalUrl: string, probed: Partial<Notices> = {}, cookiesSet = 0): HtmlResult {
+export function checkHtml(
+  html: string,
+  finalUrl: string,
+  probed: Partial<Notices> = {},
+  cookiesSet = 0,
+  extraPages: ExtraPage[] = [],
+): HtmlResult {
   const findings: Finding[] = [];
   const page = parseHtml(html);
   const base = new URL(finalUrl);
+  const own = base.hostname.toLowerCase().replace(/^www\./, "");
+  const isOwn = (h: string) => h === own || h === "www." + own || h.endsWith("." + own);
+  // The checked page first, then linked pages. Linked page findings name the page they came from.
+  const pages = [
+    { where: "", page, html },
+    ...extraPages.map((x) => ({ where: pagePath(x.url, base), page: parseHtml(x.html), html: x.html })),
+  ];
+  const on = (where: string) => (where ? ` on ${where}` : "");
   const trackers: string[] = [];
+  const trackerWhere = new Map<string, string>();
+  const addTracker = (name: string, where: string) => {
+    if (trackers.includes(name)) return;
+    trackers.push(name);
+    trackerWhere.set(name, where);
+  };
+  const thirdParty = new Map<string, string>(); // script host -> page it was first seen on
   let mixed = 0;
-  for (const s of page.scripts) {
-    const src = s["src"] ?? "";
-    if (!src) continue;
-    let host = "";
-    try {
-      host = new URL(src, base).hostname.toLowerCase();
-    } catch { /* ignore */ }
-    // As in site_check.py, match tracker domains on every script host (a substring match).
-    for (const [dom, name] of Object.entries(TRACKER_DOMAINS)) {
-      if (host && host.includes(dom) && !trackers.includes(name)) trackers.push(name);
+  const inlineAll: string[] = [];
+  for (const pg of pages) {
+    for (const s of pg.page.scripts) {
+      const src = s["src"] ?? "";
+      if (!src) continue;
+      let host = "";
+      try {
+        host = new URL(src, base).hostname.toLowerCase();
+      } catch { /* ignore */ }
+      // As in site_check.py, match tracker domains on every script host (a substring match).
+      let tracked = false;
+      for (const [dom, name] of Object.entries(TRACKER_DOMAINS)) {
+        if (host && host.includes(dom)) {
+          addTracker(name, pg.where);
+          tracked = true;
+        }
+      }
+      if (host && !tracked && !isOwn(host) && !thirdParty.has(host)) thirdParty.set(host, pg.where);
+      // Stop building WEB-012 evidence once the per-rule cap is reached: a page can hold tens of
+      // thousands of script tags, and each one costs a safeUrl call.
+      if (/^http:\/\//i.test(src) && mixed++ < LIMITS.maxFindingsPerRule) {
+        findings.push(
+          f(
+            "WEB-012",
+            "Script loaded over HTTP (mixed content)",
+            "high",
+            "s19",
+            safeUrl(src) + on(pg.where),
+            "Load all scripts over HTTPS.",
+          ),
+        );
+      }
     }
-    // Stop building WEB-012 evidence once the per-rule cap is reached: a page can hold tens of
-    // thousands of script tags, and each one costs a safeUrl call.
-    if (/^http:\/\//i.test(src) && mixed++ < LIMITS.maxFindingsPerRule) {
-      findings.push(
-        f("WEB-012", "Script loaded over HTTP (mixed content)", "high", "s19", safeUrl(src), "Load all scripts over HTTPS."),
-      );
+    const inline = pg.page.inlineJs.join("\n");
+    inlineAll.push(inline);
+    for (const [rx, name] of INLINE_TRACKERS) {
+      if (rx.test(inline)) addTracker(name, pg.where);
     }
   }
-  const inline = page.inlineJs.join("\n");
-  for (const [rx, name] of INLINE_TRACKERS) {
-    if (rx.test(inline) && !trackers.includes(name)) trackers.push(name);
-  }
-  const lowerHtml = html.toLowerCase();
-  const consentTool = Object.entries(CONSENT_TOOLS).find(([k]) => lowerHtml.includes(k))?.[1] ?? null;
+  const inline = inlineAll.join("\n");
+  const lowerHtml = pages.map((pg) => pg.html.toLowerCase());
+  const consentTool = Object.entries(CONSENT_TOOLS).find(([k]) => lowerHtml.some((h) => h.includes(k)))?.[1] ?? null;
   const consentMode = /gtag\(\s*['"]consent['"]\s*,\s*['"]default['"]/.test(inline);
   if (trackers.length && !consentTool && !consentMode) {
     findings.push(
@@ -1051,8 +1217,23 @@ export function checkHtml(html: string, finalUrl: string, probed: Partial<Notice
         `Third-party tracker: ${t}`,
         "info",
         "s20; s21; s72; s18(1)(g)",
-        t,
+        t + on(trackerWhere.get(t) ?? ""),
         "Record as operator with country and s72 basis. Disclose in the cookie notice.",
+      ),
+    );
+  }
+  if (thirdParty.size) {
+    const named = [...thirdParty].slice(0, LIMITS.maxThirdPartyHosts).map(([h, w]) => h + (w ? ` (${w})` : ""));
+    const more = thirdParty.size - named.length;
+    findings.push(
+      f(
+        "WEB-023",
+        "Scripts loaded from other sites",
+        "info",
+        "s20; s21; s72",
+        named.join(", ") + (more > 0 ? `, and ${more} more` : ""),
+        "Each host receives visitors' IP addresses when the page loads. Record providers that process " +
+          "personal information as operators and note their country for s72. Host libraries yourself where you can.",
       ),
     );
   }
@@ -1087,14 +1268,16 @@ export function checkHtml(html: string, finalUrl: string, probed: Partial<Notice
   if (notices.privacy === false) {
     // Severity follows what the page visibly collects. It stays at medium, never lower: server logs
     // still hold IP addresses, and a passive check cannot see what the backend collects.
-    const collects = collectsOnPage(page, base, trackers.length, cookiesSet);
+    const collects = pages.some((pg) => collectsOnPage(pg.page, base, trackers.length, cookiesSet));
     findings.push(
       f(
         "WEB-015",
         "No privacy notice link found",
         collects ? "high" : "medium",
         "s18",
-        collects ? "No link or common path" : "No link or common path. No forms, cookies or trackers seen on this page",
+        collects
+          ? "No link or common path"
+          : "No link or common path. No forms for personal details, cookies or trackers seen on the pages checked",
         collects
           ? "Publish a privacy notice and link it in the footer and next to every form."
           : "Publish a short privacy notice and link it in the footer. Server logs still record IP addresses, " +
@@ -1170,12 +1353,26 @@ export function checkHtml(html: string, finalUrl: string, probed: Partial<Notice
 }
 
 const NON_ENTRY_INPUTS = new Set(["hidden", "submit", "button", "reset", "image"]);
+const PI_INPUT_TYPES = new Set(["email", "tel", "password", "file"]);
+const PI_FIELD =
+  /(name|e-?mail|phone|mobile|cell|tel|address|street|postal|zip|id_?num|idno|passport|birth|dob|card|account|user|login|message|comment|contact)/i;
 
-/** True when the page shows a way to collect personal information: a form, an entry field,
- * a tracker, a cookie, or an iframe from another host. */
+/** True when an input asks for personal information, by its type or its name, id or autocomplete. */
+function piInput(i: Record<string, string>): boolean {
+  const type = (i["type"] ?? "text").toLowerCase();
+  if (NON_ENTRY_INPUTS.has(type)) return false;
+  if (PI_INPUT_TYPES.has(type)) return true;
+  return PI_FIELD.test(`${i["name"] ?? ""} ${i["id"] ?? ""} ${i["autocomplete"] ?? ""}`);
+}
+
+/**
+ * True when the page shows a way to collect personal information: a form that posts, a text area,
+ * a field that asks for personal details, a tracker, a cookie, or an iframe from another host.
+ * A search box in a GET form does not count on its own.
+ */
 function collectsOnPage(page: Page, base: URL, trackers: number, cookiesSet: number): boolean {
-  if (page.forms > 0 || trackers > 0 || cookiesSet > 0) return true;
-  if (page.inputs.some((i) => !NON_ENTRY_INPUTS.has((i["type"] ?? "text").toLowerCase()))) return true;
+  if (page.postForms > 0 || page.textareas > 0 || trackers > 0 || cookiesSet > 0) return true;
+  if (page.inputs.some(piInput)) return true;
   return page.iframes.some((src) => {
     try {
       return new URL(src, base).hostname.toLowerCase() !== base.hostname.toLowerCase();
@@ -1183,6 +1380,13 @@ function collectsOnPage(page: Page, base: URL, trackers: number, cookiesSet: num
       return false;
     }
   });
+}
+
+/** Path of a page on the checked site, for evidence. Redacted like every report URL. */
+function pagePath(url: string, base: URL): string {
+  const safe = safeUrl(url);
+  const origin = `${base.protocol}//${base.host}`;
+  return safe.startsWith(origin) ? safe.slice(origin.length) || "/" : safe;
 }
 
 function capPerRule(findings: Finding[]): Finding[] {
@@ -1204,11 +1408,14 @@ export interface CheckResult {
   findings: Finding[];
   cookies: CookieInfo[];
   notices: Notices;
+  pages_checked: string[];
   disclaimer: string;
 }
 
 export interface CheckOptions {
   probeNoticePaths?: boolean;
+  /** Same-site linked pages to check as well, up to LIMITS.maxExtraPages. Only where robots.txt allows. */
+  extraPages?: number;
   now?: (() => Date) | undefined;
 }
 
@@ -1245,7 +1452,47 @@ export async function runSiteCheck(input: string, ctx: Ctx, opts: CheckOptions =
       })
     )
     : [];
-  const [httpR, secR, ...noticeR] = await Promise.allSettled([httpProbe ?? Promise.resolve(null), secTxt, ...noticeProbes]);
+  const maxExtra = Math.max(0, Math.min(opts.extraPages ?? 0, LIMITS.maxExtraPages));
+  const robots = maxExtra
+    ? guardedFetch(`${base}/robots.txt`, ctx, {
+      follow: true,
+      bodyLimit: (ct, st) => (st === 200 && ct.split(";")[0]!.trim() === "text/plain" ? LIMITS.maxRobotsBytes : 0),
+    })
+    : null;
+  const [httpR, secR, robotsR, ...noticeR] = await Promise.allSettled([
+    httpProbe ?? Promise.resolve(null),
+    secTxt,
+    robots ?? Promise.resolve(null),
+    ...noticeProbes,
+  ]);
+
+  // Linked pages: same site, only where robots.txt allows. No robots.txt (4xx) allows all, as crawlers
+  // treat it. A server error or a failed fetch means we do not know, so no extra page is fetched.
+  const extra: ExtraPage[] = [];
+  if (maxExtra && robotsR.status === "fulfilled" && robotsR.value && robotsR.value.status < 500) {
+    const r = robotsR.value;
+    const allowed = r.status === 200 && r.body.length
+      ? parseRobots(new TextDecoder("utf-8", { fatal: false }).decode(r.body))
+      : () => true;
+    const targets = pickLinks(parseHtml(html), finalUrl, LIMITS.maxLinkCandidates)
+      .filter((u) => allowed(new URL(u).pathname))
+      .slice(0, maxExtra);
+    const pagesR = await Promise.allSettled(targets.map((u) =>
+      guardedFetch(u, ctx, {
+        follow: true,
+        bodyLimit: (ct, st) => (st >= 200 && st < 300 && isHtml(ct) ? LIMITS.maxExtraPageBytes : 0),
+      })
+    ));
+    for (const pr of pagesR) {
+      if (pr.status !== "fulfilled") continue;
+      const x = pr.value;
+      if (x.status < 200 || x.status >= 300 || !isHtml(x.contentType)) continue;
+      if (new URL(x.url).origin !== final.origin) continue; // redirected off the site
+      const body = new TextDecoder("utf-8", { fatal: false }).decode(x.body);
+      if (isChallenge(x.headers, body)) continue;
+      extra.push({ url: x.url, html: body });
+    }
+  }
 
   const findings: Finding[] = [];
   if (httpR.status === "fulfilled" && httpR.value) {
@@ -1281,7 +1528,7 @@ export async function runSiteCheck(input: string, ctx: Ctx, opts: CheckOptions =
     probed.paia = [4, 5].some(found);
     probed.cookie = [6, 7].some(found);
   }
-  const hr = checkHtml(html, finalUrl, probed, ck.cookies.length);
+  const hr = checkHtml(html, finalUrl, probed, ck.cookies.length, extra);
   findings.push(...hr.findings);
 
   const hasSecTxt = secR.status === "fulfilled" && secR.value.status === 200 &&
@@ -1306,8 +1553,16 @@ export async function runSiteCheck(input: string, ctx: Ctx, opts: CheckOptions =
     findings: sorted,
     cookies: ck.cookies,
     notices: hr.notices,
+    pages_checked: [pagePath(finalUrl, final), ...extra.map((x) => pagePath(x.url, final))],
     disclaimer: DISCLAIMER,
   };
+}
+
+/** EXTRA_PAGES: linked pages per check, 0 to LIMITS.maxExtraPages. Unset means the maximum. */
+export function extraPagesSetting(v: string | undefined): number {
+  if (v === undefined || v.trim() === "") return LIMITS.maxExtraPages;
+  const n = Number(v.trim());
+  return Number.isInteger(n) && n >= 0 ? Math.min(n, LIMITS.maxExtraPages) : 0;
 }
 
 // ---------------------------------------------------------------- rate limiting
@@ -1555,6 +1810,7 @@ export function createHandler(deps: Deps): (req: Request) => Promise<Response> {
       };
       const result = await runSiteCheck(body.url, ctx, {
         probeNoticePaths: (env("PROBE_NOTICE_PATHS") ?? "").toLowerCase() === "true",
+        extraPages: extraPagesSetting(env("EXTRA_PAGES")),
         now: deps.now,
       });
       return json(result, 200, okOrigin);

@@ -71,6 +71,8 @@ class _PageParser(HTMLParser):
         self.links: List[dict] = []
         self.inputs: List[dict] = []
         self.forms = 0
+        self.post_forms = 0
+        self.textareas = 0
         self.text: List[str] = []
         self.iframes: List[str] = []
         self._in_a: Optional[dict] = None
@@ -88,6 +90,10 @@ class _PageParser(HTMLParser):
             self.inputs.append(a)
         elif tag == "form":
             self.forms += 1
+            if (a.get("method") or "").strip().lower() == "post":
+                self.post_forms += 1
+        elif tag == "textarea":
+            self.textareas += 1
         elif tag == "iframe":
             self.iframes.append(a.get("src", ""))
 
@@ -108,20 +114,182 @@ class _PageParser(HTMLParser):
 
 
 NON_ENTRY_INPUTS = {"hidden", "submit", "button", "reset", "image"}
+PI_INPUT_TYPES = {"email", "tel", "password", "file"}
+PI_FIELD = re.compile(r"(name|e-?mail|phone|mobile|cell|tel|address|street|postal|zip|id_?num|idno|passport|birth|dob|"
+                      r"card|account|user|login|message|comment|contact)", re.I)
+
+
+def _pi_input(i: dict) -> bool:
+    """True when an input asks for personal information, by its type or its name, id or autocomplete."""
+    t = (i.get("type") or "text").lower()
+    if t in NON_ENTRY_INPUTS:
+        return False
+    if t in PI_INPUT_TYPES:
+        return True
+    return bool(PI_FIELD.search(f"{i.get('name', '')} {i.get('id', '')} {i.get('autocomplete', '')}"))
 
 
 def _collects_on_page(page: "_PageParser", host: str, trackers: int, cookies: int) -> bool:
-    """True when the page shows a way to collect personal information: a form, an entry field,
-    a tracker, a cookie, or an iframe from another host."""
-    if page.forms or trackers or cookies:
+    """True when the page shows a way to collect personal information: a form that posts, a text area,
+    a field that asks for personal details, a tracker, a cookie, or an iframe from another host.
+    A search box in a GET form does not count on its own."""
+    if page.post_forms or page.textareas or trackers or cookies:
         return True
-    if any((i.get("type") or "text").lower() not in NON_ENTRY_INPUTS for i in page.inputs):
+    if any(_pi_input(i) for i in page.inputs):
         return True
     for src in page.iframes:
         h = (urlparse(urljoin(f"https://{host}/", src)).hostname or "").lower()
         if h and h != host.lower():
             return True
     return False
+
+
+MAX_EXTRA_PAGES = 3  # same-site pages linked from the checked page, fetched when robots.txt allows
+MAX_LINK_CANDIDATES = 40
+MAX_ROBOTS_RULES = 500
+MAX_RULE_PATH = 512
+MAX_THIRD_PARTY_HOSTS = 10
+_SKIP_EXTENSION = re.compile(r"\.(pdf|png|jpe?g|gif|svg|webp|ico|css|js|mjs|json|xml|txt|zip|gz|mp[34]|webm|docx?|xlsx?|"
+                             r"pptx?|csv)$", re.I)
+_SKIP_ACTION = re.compile(r"(log-?out|sign-?out|unsubscribe|delete|remove|cancel|confirm|verify|reset)", re.I)
+
+
+def _glob_match(pattern: str, text: str) -> bool:
+    """Glob match where * is any run of characters. Linear two-pointer match, no regex backtracking."""
+    p = t = 0
+    star, mark = -1, 0
+    while t < len(text):
+        if p < len(pattern) and pattern[p] != "*" and pattern[p] == text[t]:
+            p += 1
+            t += 1
+        elif p < len(pattern) and pattern[p] == "*":
+            star = p
+            p += 1
+            mark = t
+        elif star >= 0:
+            p = star + 1
+            mark += 1
+            t = mark
+        else:
+            return False
+    while p < len(pattern) and pattern[p] == "*":
+        p += 1
+    return p == len(pattern)
+
+
+def _robots_rule_matches(rule: str, path: str) -> bool:
+    return _glob_match(rule[:-1], path) if rule.endswith("$") else _glob_match(rule + "*", path)
+
+
+def parse_robots(txt: str):
+    """Return a test for a path. The group for this checker's token (popia-site-check) wins over *.
+    The longest matching rule decides; Allow wins a tie."""
+    groups = []
+    cur = None
+    last_was_agent = False
+    count = 0
+    for raw in txt.splitlines():
+        line = raw.split("#", 1)[0].strip()
+        if ":" not in line:
+            continue
+        key, value = line.split(":", 1)
+        key, value = key.strip().lower(), value.strip()
+        if key == "user-agent":
+            if cur is None or not last_was_agent:
+                cur = {"agents": [], "rules": []}
+                groups.append(cur)
+            cur["agents"].append(value.lower())
+            last_was_agent = True
+        elif key in ("allow", "disallow") and cur is not None:
+            last_was_agent = False
+            count += 1
+            if count > MAX_ROBOTS_RULES:
+                continue
+            if value:
+                cur["rules"].append((key == "allow", value[:MAX_RULE_PATH]))
+        else:
+            last_was_agent = False
+    mine = [g for g in groups if any(a != "*" and a in "popia-site-check" for a in g["agents"])]
+    chosen = [r for g in (mine or [g for g in groups if "*" in g["agents"]]) for r in g["rules"]]
+
+    def allowed(path: str) -> bool:
+        pth = path[:MAX_RULE_PATH]
+        best = None
+        for allow, rule in chosen:
+            if not _robots_rule_matches(rule, pth):
+                continue
+            if best is None or len(rule) > best[1] or (len(rule) == best[1] and allow):
+                best = (allow, len(rule))
+        return best[0] if best else True
+
+    return allowed
+
+
+def pick_links(page: "_PageParser", final_url: str, limit: int) -> List[str]:
+    """Same-site pages linked from the checked page, in page order. Only plain paths: no query strings,
+    no files, no notice paths (probed separately) and nothing that sounds like an action."""
+    base = urlparse(final_url)
+    origin = f"{base.scheme}://{base.netloc}".lower()
+    seen = {base.path or "/"}
+    out: List[str] = []
+    for link in page.links:
+        if len(out) >= limit:
+            break
+        try:
+            u = urlparse(urljoin(final_url, link.get("href", "")))
+        except ValueError:
+            continue
+        if f"{u.scheme}://{u.netloc}".lower() != origin or u.query or u.username or u.password:
+            continue
+        path = u.path or "/"
+        if path in seen:
+            continue
+        seen.add(path)
+        if _SKIP_EXTENSION.search(path) or _SKIP_ACTION.search(path) or path.rstrip("/") in NOTICE_PATHS:
+            continue
+        out.append(f"{base.scheme}://{base.netloc}{path}")
+    return out
+
+
+def _page_path(url: str, final_url: str) -> str:
+    """Path of a page on the checked site, for evidence. Redacted like every report URL."""
+    safe = safe_url(url)
+    b = urlparse(final_url)
+    origin = f"{b.scheme}://{b.hostname}" + (f":{b.port}" if b.port else "")
+    return (safe[len(origin):] or "/") if safe.startswith(origin) else safe
+
+
+def _extra_pages(page: "_PageParser", final_url: str, timeout: float, block_private: bool, limit: int) -> List[dict]:
+    """Fetch up to `limit` linked pages on the same site where robots.txt allows. Never raises."""
+    if limit <= 0:
+        return []
+    b = urlparse(final_url)
+    origin = f"{b.scheme}://{b.netloc}"
+    try:
+        st, _, h, body = _fetch(origin + "/robots.txt", timeout, block_private=block_private)
+    except Exception:
+        return []  # unknown: be polite and fetch nothing more
+    if st >= 500:
+        return []
+    ctype = (h.get("Content-Type", "") if h else "").split(";")[0].strip().lower()
+    allowed = parse_robots(body[:32768].decode("utf-8", errors="ignore")) if st == 200 and ctype == "text/plain" \
+        else (lambda _p: True)
+    targets = [u for u in pick_links(page, final_url, MAX_LINK_CANDIDATES) if allowed(urlparse(u).path)][:limit]
+    out = []
+    for u in targets:
+        try:
+            st, fu, h, body = _fetch(u, timeout, block_private=block_private)
+        except Exception:
+            continue
+        ctype = (h.get("Content-Type", "") if h else "").split(";")[0].strip().lower()
+        fu_p = urlparse(fu)
+        if not 200 <= st < 300 or ctype != "text/html" or f"{fu_p.scheme}://{fu_p.netloc}" != origin:
+            continue
+        html = body[:524288].decode("utf-8", errors="ignore")
+        if is_challenge({k.lower(): v for k, v in h.items()} if h else {}, html):
+            continue
+        out.append({"url": fu, "html": html})
+    return out
 
 
 class BlockedTarget(ValueError):
@@ -238,7 +406,8 @@ def safe_url(u: str, keep_path: bool = True) -> str:
     return f"{p.scheme}://{host}{path}{note}" if p.scheme else f"{host}{path}{note}"
 
 
-def check(url: str, timeout: float = 15, probe_paths: bool = True, block_private: bool = False) -> dict:
+def check(url: str, timeout: float = 15, probe_paths: bool = True, block_private: bool = False,
+          extra_pages: int = MAX_EXTRA_PAGES) -> dict:
     """Passive check. Set block_private=True when the URL comes from someone else (MCP, hosted use):
     it refuses targets and redirects that resolve to private, loopback or reserved addresses."""
     if not re.match(r"^https?://", url, re.I):
@@ -336,31 +505,58 @@ def check(url: str, timeout: float = 15, probe_paths: bool = True, block_private
                                    f"{name}: secure={c['secure']} httponly={c['httponly']}",
                                    "Set Secure, HttpOnly and SameSite on session cookies."))
 
-    # ---- trackers and consent tooling in initial HTML
+    # ---- trackers, third-party scripts and consent tooling: the checked page, then linked pages
+    extra = _extra_pages(page, final_url, timeout, block_private, min(max(extra_pages, 0), MAX_EXTRA_PAGES))
+    pages = [("", page, html)]
+    for x in extra:
+        pp = _PageParser()
+        try:
+            pp.feed(x["html"])
+        except Exception:
+            pass
+        pages.append((_page_path(x["url"], final_url), pp, x["html"]))
+
+    def on(where):
+        return f" on {where}" if where else ""
+
+    own = (parsed.hostname or "").lower()
+    own = own[4:] if own.startswith("www.") else own
     trackers = []
+    tracker_where = {}
     third_party = set()
-    for s in page.scripts:
-        src = s.get("src", "")
-        if src:
-            host = (urlparse(urljoin(final_url, src)).hostname or "").lower()
-            if host and host != (parsed.hostname or "").lower():
-                third_party.add(host)
-                if not s.get("integrity") and not any(d in host for d in TRACKER_DOMAINS):
-                    pass
-            for dom, name in TRACKER_DOMAINS.items():
-                if dom in host and name not in trackers:
-                    trackers.append(name)
-            if src.startswith("http://"):
-                findings.append(_f("WEB-012", "Script loaded over HTTP (mixed content)", "high", "s19", safe_url(src),
-                                   "Load all scripts over HTTPS."))
-    inline = "\n".join(page.inline_js)
-    for pat, name in [(r"gtag\(\s*['\"]config", "Google Analytics / gtag"), (r"fbq\(\s*['\"]init", "Meta Pixel"),
-                      (r"ttq\.load", "TikTok Pixel"), (r"_linkedin_partner_id", "LinkedIn Insight"),
-                      (r"\bhj\(|hotjar", "Hotjar"), (r"clarity\(", "Microsoft Clarity"),
-                      (r"GTM-[A-Z0-9]{5,}", "Google Tag Manager / gtag")]:
-        if re.search(pat, inline) and name not in trackers:
-            trackers.append(name)
-    consent_tool = next((n for k, n in CONSENT_TOOLS.items() if k in html.lower()), None)
+    third_party_where = {}  # hosts for WEB-023, in first-seen order: not trackers, not this site
+    inline_all = []
+    for where, pg, _h in pages:
+        for s in pg.scripts:
+            src = s.get("src", "")
+            if src:
+                host = (urlparse(urljoin(final_url, src)).hostname or "").lower()
+                if host and host != (parsed.hostname or "").lower():
+                    third_party.add(host)
+                tracked = False
+                for dom, name in TRACKER_DOMAINS.items():
+                    if host and dom in host:
+                        tracked = True
+                        if name not in trackers:
+                            trackers.append(name)
+                            tracker_where[name] = where
+                if host and not tracked and not (host == own or host.endswith("." + own)) \
+                        and host not in third_party_where:
+                    third_party_where[host] = where
+                if src.startswith("http://"):
+                    findings.append(_f("WEB-012", "Script loaded over HTTP (mixed content)", "high", "s19",
+                                       safe_url(src) + on(where), "Load all scripts over HTTPS."))
+        inline_pg = "\n".join(pg.inline_js)
+        inline_all.append(inline_pg)
+        for pat, name in [(r"gtag\(\s*['\"]config", "Google Analytics / gtag"), (r"fbq\(\s*['\"]init", "Meta Pixel"),
+                          (r"ttq\.load", "TikTok Pixel"), (r"_linkedin_partner_id", "LinkedIn Insight"),
+                          (r"\bhj\(|hotjar", "Hotjar"), (r"clarity\(", "Microsoft Clarity"),
+                          (r"GTM-[A-Z0-9]{5,}", "Google Tag Manager / gtag")]:
+            if re.search(pat, inline_pg) and name not in trackers:
+                trackers.append(name)
+                tracker_where[name] = where
+    inline = "\n".join(inline_all)
+    consent_tool = next((n for k, n in CONSENT_TOOLS.items() if any(k in h.lower() for _w, _p, h in pages)), None)
     consent_mode = bool(re.search(r"gtag\(\s*['\"]consent['\"]\s*,\s*['\"]default['\"]", inline))
     if trackers and not consent_tool and not consent_mode:
         findings.append(_f("WEB-013", "Trackers in page with no consent tool detected", "high",
@@ -369,8 +565,17 @@ def check(url: str, timeout: float = 15, probe_paths: bool = True, block_private
                            "Add a consent banner that blocks these tags until opt-in, or set Consent Mode defaults to denied. "
                            "SPAs: confirm in a browser, the banner may render later."))
     for t in trackers:
-        findings.append(_f("WEB-014", f"Third-party tracker: {t}", "info", "s20; s21; s72; s18(1)(g)", t,
+        findings.append(_f("WEB-014", f"Third-party tracker: {t}", "info", "s20; s21; s72; s18(1)(g)",
+                           t + on(tracker_where.get(t, "")),
                            "Record as operator with country and s72 basis. Disclose in the cookie notice."))
+    if third_party_where:
+        named = [h + (f" ({w})" if w else "") for h, w in list(third_party_where.items())[:MAX_THIRD_PARTY_HOSTS]]
+        more = len(third_party_where) - len(named)
+        findings.append(_f("WEB-023", "Scripts loaded from other sites", "info", "s20; s21; s72",
+                           ", ".join(named) + (f", and {more} more" if more > 0 else ""),
+                           "Each host receives visitors' IP addresses when the page loads. Record providers that "
+                           "process personal information as operators and note their country for s72. Host libraries "
+                           "yourself where you can."))
 
     # ---- notices
     text_all = " ".join(page.text).lower()
@@ -416,12 +621,13 @@ def check(url: str, timeout: float = 15, probe_paths: bool = True, block_private
     if notices["privacy"] is False:
         # Severity follows what the page visibly collects. It stays at medium, never lower: server logs
         # still hold IP addresses, and a passive check cannot see what the backend collects.
-        if _collects_on_page(page, parsed.hostname or "", len(trackers), len(cookies)):
+        if any(_collects_on_page(pg, parsed.hostname or "", len(trackers), len(cookies)) for _w, pg, _h in pages):
             findings.append(_f("WEB-015", "No privacy notice link found", "high", "s18", "No link or common path",
                                "Publish a privacy notice and link it in the footer and next to every form."))
         else:
             findings.append(_f("WEB-015", "No privacy notice link found", "medium", "s18",
-                               "No link or common path. No forms, cookies or trackers seen on this page",
+                               "No link or common path. No forms for personal details, cookies or trackers seen on the pages "
+                               "checked",
                                "Publish a short privacy notice and link it in the footer. Server logs still record "
                                "IP addresses, which are personal information."))
     if notices["paia"] is False:
@@ -460,6 +666,7 @@ def check(url: str, timeout: float = 15, probe_paths: bool = True, block_private
         "spa_suspected": spa, "summary": summary, "findings": findings, "cookies": cookies,
         "trackers": trackers, "third_party_script_hosts": sorted(third_party), "consent_tool": consent_tool,
         "consent_mode_default": consent_mode, "notices": notices, "probed_paths": probed,
+        "pages_checked": [_page_path(final_url, final_url)] + [p[0] for p in pages[1:]],
         "disclaimer": "Passive automated check of initial HTML and headers. Leads for review, not legal "
                       "conclusions. Engineering guidance only, not legal advice.",
     }
@@ -475,6 +682,7 @@ def fmt_md(res: dict) -> str:
           f"- **URL:** {res['url']} → {res['final_url']} (HTTP {res['status']})",
           f"- **Checked:** {res['checked_at']} · site_check {res['version']} · passive",
           f"- **Consent tool:** {res['consent_tool'] or 'none detected'} · Consent Mode default: {'yes' if res['consent_mode_default'] else 'no'}",
+          f"- **Pages checked:** {', '.join(res.get('pages_checked') or ['/'])}",
           f"- **Trackers in initial HTML:** {', '.join(res['trackers']) or 'none detected'}",
           f"- **Notices:** privacy {_mark(res['notices']['privacy'])} · PAIA {_mark(res['notices']['paia'])} · "
           f"cookies {_mark(res['notices']['cookie'])} · Information Officer named {_mark(res['notices']['information_officer'])}",
@@ -504,11 +712,13 @@ def main(argv=None) -> int:
     ap.add_argument("--json", help="write JSON result")
     ap.add_argument("--timeout", type=float, default=15)
     ap.add_argument("--no-probe", action="store_true", help="don't request common notice paths")
+    ap.add_argument("--pages", type=int, default=MAX_EXTRA_PAGES,
+                    help=f"same-site linked pages to check too, where robots.txt allows (0 to {MAX_EXTRA_PAGES})")
     ap.add_argument("--block-private", action="store_true",
                     help="refuse private, loopback and reserved targets (use for URLs supplied by others)")
     a = ap.parse_args(argv)
     try:
-        res = check(a.url, a.timeout, probe_paths=not a.no_probe, block_private=a.block_private)
+        res = check(a.url, a.timeout, probe_paths=not a.no_probe, block_private=a.block_private, extra_pages=a.pages)
     except BlockedTarget as e:
         print(f"site_check: refused: {e}", file=sys.stderr)
         return 2

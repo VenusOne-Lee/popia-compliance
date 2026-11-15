@@ -67,8 +67,10 @@ class Plain(BaseHTTPRequestHandler):
     def do_GET(self):
         routes = {
             "/": (b'<a href="/map">Map</a><input type="hidden" name="t"><button>Go</button>', []),
-            "/form": (b'<form action="/search"><button>Go</button></form>', []),
-            "/field": (b'<input name="q">', []),
+            "/search": (b'<form action="/search" method="get"><input name="q"><select name="from_stop"></select></form>', []),
+            "/form": (b'<form method="POST" action="/s"><button>Go</button></form>', []),
+            "/textarea": (b"<form><textarea></textarea></form>", []),
+            "/field": (b'<form><input name="full_name"></form>', []),
             "/frame-own": (b'<iframe src="/embed"></iframe>', []),
             "/frame": (b'<iframe src="https://video.example.net/embed/1"></iframe>', []),
             "/cookie": (b"<p>hi</p>", ["pref=1; Path=/; Secure; HttpOnly"]),
@@ -107,12 +109,13 @@ class SeverityContextTest(unittest.TestCase):
     def test_privacy_notice_is_medium_when_nothing_collects(self):
         f = self.finding("/", "WEB-015")
         self.assertEqual(f["severity"], "medium")
-        self.assertIn("No forms, cookies or trackers", f["evidence"])
+        self.assertIn("No forms for personal details, cookies or trackers", f["evidence"])
         self.assertIn("IP addresses", f["fix"])
         self.assertEqual(self.finding("/frame-own", "WEB-015")["severity"], "medium")
+        self.assertEqual(self.finding("/search", "WEB-015")["severity"], "medium")  # a search box alone
 
     def test_privacy_notice_is_high_when_the_page_collects(self):
-        for path in ("/form", "/field", "/frame", "/cookie"):
+        for path in ("/form", "/textarea", "/field", "/frame", "/cookie"):
             self.assertEqual(self.finding(path, "WEB-015")["severity"], "high", path)
 
     def test_paia_finding_notes_non_business_projects(self):
@@ -190,3 +193,92 @@ class UnreadableSiteTest(unittest.TestCase):
     def test_challenge_detection_ignores_normal_pages(self):
         self.assertFalse(site_check.is_challenge({}, '<title>Shop</title><script src="/cdn-cgi/challenge-platform/x.js">'))
         self.assertTrue(site_check.is_challenge({"cf-mitigated": "challenge"}, ""))
+
+
+class Crawl(BaseHTTPRequestHandler):
+    """A home page linking to same-site pages, one with a script from a CDN. robots.txt varies per test."""
+
+    robots = (404, b"")
+
+    def do_GET(self):
+        pages = {
+            "/": b'<a href="/map">Map</a><a href="/stops">Stops</a><a href="/away">Away</a><a href="/slow">Slow</a>',
+            "/map": b'<script src="https://cdn.example.net/leaflet.js"></script>'
+                    b'<script src="https://connect.facebook.net/en_US/fbevents.js"></script>',
+            "/stops": b"<p>stops</p>",
+            "/slow": b"<p>slow</p>",
+        }
+        if self.path == "/robots.txt":
+            st, body = Crawl.robots
+            self.send_response(st)
+            self.send_header("Content-Type", "text/plain")
+            self.end_headers()
+            self.wfile.write(body)
+            return
+        if self.path == "/away":
+            self.send_response(302)
+            self.send_header("Location", "http://localhost:1/")  # off the site: never graded
+            self.end_headers()
+            return
+        body = pages.get(self.path)
+        self.send_response(200 if body is not None else 404)
+        self.send_header("Content-Type", "text/html")
+        self.end_headers()
+        self.wfile.write(body or b"")
+
+    def log_message(self, *a):
+        pass
+
+
+class LinkedPagesTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.srv = HTTPServer(("127.0.0.1", 0), Crawl)
+        threading.Thread(target=cls.srv.serve_forever, daemon=True).start()
+        cls.base = f"http://127.0.0.1:{cls.srv.server_port}"
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.srv.shutdown()
+
+    def run_check(self, robots, pages=3):
+        Crawl.robots = robots
+        return site_check.check(self.base + "/", timeout=5, probe_paths=False, extra_pages=pages)
+
+    def test_robots_rules(self):
+        allowed = site_check.parse_robots("User-agent: *\nDisallow: /private\nAllow: /private/open\nDisallow: /*.php$\n")
+        self.assertEqual([allowed(p) for p in ("/", "/private", "/private/x", "/private/open/1", "/a.php", "/a.php/b")],
+                         [True, False, False, True, False, True])
+        mine = site_check.parse_robots("User-agent: *\nDisallow: /\n\nUser-agent: popia-site-check\nAllow: /\n")
+        self.assertTrue(mine("/map"))
+        self.assertFalse(site_check.parse_robots("User-agent: popia-site-check\nUser-agent: other\nDisallow: /\n")("/m"))
+        self.assertTrue(site_check.parse_robots("User-agent: *\nDisallow: /a\nAllow: /a\n")("/a"))
+        self.assertTrue(site_check.parse_robots("User-agent: *\nDisallow:\n")("/x"))
+
+    def test_pick_links_matches_the_hosted_check(self):
+        page = site_check._PageParser()
+        page.feed('<a href="/map">Map</a><a href="/map#top">Map again</a><a href="https://other.example.net/x">O</a>'
+                  '<a href="/search?q=a">S</a><a href="/files/a.pdf">P</a><a href="/logout">Out</a>'
+                  '<a href="/privacy">Privacy</a><a href="/">Home</a><a href="mailto:a@example.test">M</a>'
+                  '<a href="/stops">Stops</a><a href="/routes/">Routes</a><a href="/about">About</a>')
+        got = site_check.pick_links(page, "https://example.co.za/", 10)
+        self.assertEqual(got, ["https://example.co.za/map", "https://example.co.za/stops",
+                               "https://example.co.za/routes/", "https://example.co.za/about"])
+
+    def test_linked_pages_are_checked_where_robots_allows(self):
+        res = self.run_check((404, b""))
+        self.assertEqual(res["pages_checked"], ["/", "/map", "/stops"])  # /away left the site, /slow is the 4th
+        w23 = next(f for f in res["findings"] if f["rule_id"] == "WEB-023")
+        self.assertEqual(w23["evidence"], "cdn.example.net (/map)")
+        w14 = next(f for f in res["findings"] if f["rule_id"] == "WEB-014")
+        self.assertEqual(w14["evidence"], "Meta Pixel on /map")
+        self.assertIn("**Pages checked:** /, /map, /stops", site_check.fmt_md(res))
+
+    def test_robots_disallow_and_server_error(self):
+        res = self.run_check((200, b"User-agent: *\nDisallow: /map\n"))
+        self.assertNotIn("/map", res["pages_checked"])
+        self.assertNotIn("WEB-023", {f["rule_id"] for f in res["findings"]})
+        self.assertEqual(self.run_check((503, b""))["pages_checked"], ["/"])
+
+    def test_zero_pages_turns_it_off(self):
+        self.assertEqual(self.run_check((404, b""), pages=0)["pages_checked"], ["/"])
